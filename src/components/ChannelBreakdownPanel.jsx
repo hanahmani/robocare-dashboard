@@ -1,0 +1,75 @@
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
+import Card from './Card'
+import { channelBreakdown, dashboardStats } from '../data/mockData'
+
+export default function ChannelBreakdownPanel({ channelFilter = 'All Channels' }) {
+  const displayData =
+    channelFilter === 'All Channels'
+      ? channelBreakdown
+      : channelBreakdown.filter((c) => c.name === channelFilter)
+
+  return (
+    <Card padding="p-5">
+      <h3 className="text-sm font-semibold text-gray-900 mb-4">Channel Breakdown</h3>
+
+      <div className="space-y-3">
+        {displayData.map((c) => (
+          <div key={c.name}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="text-sm text-gray-700">{c.name}</span>
+              </div>
+              <span className="text-xs text-gray-500">
+                {c.label} ({c.percent}%)
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${c.percent}%`, backgroundColor: c.color }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 flex justify-center relative">
+        <div className="w-40 h-40 relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={displayData}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={75}
+                paddingAngle={2}
+                dataKey="value"
+                strokeWidth={0}
+              >
+                {displayData.map((entry, idx) => (
+                  <Cell
+                    key={idx}
+                    fill={entry.color}
+                    opacity={channelFilter !== 'All Channels' ? 1 : 0.9}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-xs text-gray-500">
+              {channelFilter === 'All Channels' ? 'Total' : channelFilter}
+            </span>
+            <span className="text-base font-semibold text-gray-900">
+              {channelFilter === 'All Channels'
+                ? dashboardStats.total
+                : displayData[0]?.label ?? '—'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
