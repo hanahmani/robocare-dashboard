@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Calendar, ChevronDown, Search, X } from 'lucide-react'
 
 const DATE_OPTIONS = ['Last 24 Hours', 'Last 7 Days', 'Last 30 Days', 'Last 3 Months']
-const CHANNEL_OPTIONS = ['All Channels', 'Email', 'WhatsApp', 'SMS', 'Push']
+const CHANNEL_OPTIONS = ['All Channels', 'Email', 'WhatsApp', 'SMS']
 const STATUS_OPTIONS = ['All Statuses', 'Sent', 'Failed', 'Partial']
 
 function Dropdown({ options, value, onChange, icon }) {

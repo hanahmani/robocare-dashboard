@@ -2,9 +2,13 @@ import { useState, useMemo } from 'react'
 import { Plus, Edit2, Copy, Trash2, Search, X } from 'lucide-react'
 import Card from '../components/Card'
 import { ChannelTag, StatusBadge } from '../components/Badges'
-import { templates as initialTemplates } from '../data/mockData'
+import { templates as initialTemplates } from '../data/templatesConfig'
+import {
+  getMetaWhatsAppTemplates,
+  getWhatsAppTemplateParameterSchema,
+} from '../data/whatsappTemplates'
 
-const CHANNELS = ['Email', 'WhatsApp', 'SMS', 'Push']
+const CHANNELS = ['Email', 'WhatsApp', 'SMS']
 const LANGUAGES = ['FR', 'EN', 'AR']
 const STATUSES = ['Active', 'Draft']
 
@@ -70,6 +74,7 @@ const EMPTY_FORM = { name: '', channel: 'Email', language: 'FR', content: '', st
 
 export default function TemplatesPage() {
   const [data, setData] = useState(initialTemplates)
+  const metaTemplates = getMetaWhatsAppTemplates()
   const [search, setSearch] = useState('')
   const [channelFilter, setChannelFilter] = useState('All')
   const [showModal, setShowModal] = useState(false)
@@ -141,6 +146,75 @@ export default function TemplatesPage() {
 
   return (
     <div className="p-6">
+      <div className="mb-8">
+        <div className="flex items-end justify-between gap-4 mb-4 flex-wrap">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">WhatsApp Meta templates</h2>
+            <p className="text-sm text-gray-500">
+              Templates loaded from your Meta WhatsApp account. Each card shows the header, body and button components.
+            </p>
+          </div>
+          <div className="text-sm text-gray-500">{metaTemplates.length} templates</div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {metaTemplates.map((template) => {
+            const fields = getWhatsAppTemplateParameterSchema(template)
+
+            return (
+              <Card key={template.id} className="border-brand-100 bg-brand-50/20">
+                <div className="flex items-start justify-between mb-3 gap-3">
+                  <div>
+                    <div className="text-[11px] text-gray-400 font-mono">{template.id}</div>
+                    <h3 className="font-semibold text-gray-900">{template.name}</h3>
+                  </div>
+                  <StatusBadge status={template.status} />
+                </div>
+
+                <div className="flex items-center justify-between mb-3">
+                  <ChannelTag channel={template.channel} />
+                  <span className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
+                    {template.language}
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  {template.components.map((component, index) => (
+                    <div key={`${template.id}-${component.type}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
+                          {component.type}
+                        </span>
+                        {component.format && (
+                          <span className="text-[11px] text-gray-400">{component.format}</span>
+                        )}
+                      </div>
+                      {component.text && (
+                        <p className="text-xs text-gray-600 whitespace-pre-line">{component.text}</p>
+                      )}
+                      {component.buttons?.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {component.buttons.map((button, buttonIndex) => (
+                            <div key={`${button.text}-${buttonIndex}`} className="rounded border border-dashed border-gray-200 p-2">
+                              <div className="text-xs font-medium text-gray-700">{button.text}</div>
+                              <div className="text-[11px] text-gray-500 break-all">{button.url}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                  {fields.length > 0 ? `${fields.length} parameter field${fields.length > 1 ? 's' : ''}` : 'No dynamic parameters'}
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="relative w-64">

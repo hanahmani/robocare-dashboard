@@ -56,7 +56,7 @@ src/
 | `/` | Dashboard (vue principale) |
 | `/notifications` | Liste complète des notifications |
 | `/recipients` | Gestion des destinataires |
-| `/templates` | Gestion des templates SMS/Email/WhatsApp/Push |
+| `/templates` | Gestion des templates SMS/Email/WhatsApp |
 | `/channels` | Configuration des canaux |
 | `/settings` | Paramètres (filtre nuit, retry, etc.) |
 
@@ -118,7 +118,7 @@ export default function DashboardPage() {
 | `GET /api/notifications/errors/critical` | Erreurs critiques récentes |
 | `GET /api/recipients` | Liste des destinataires |
 | `GET /api/templates` | Liste des templates |
-| `GET /api/channels` | État des 4 canaux (Email, SMS, WhatsApp, Push) |
+| `GET /api/channels` | État des 3 canaux (Email, SMS, WhatsApp) |
 
 ## Personnalisation
 

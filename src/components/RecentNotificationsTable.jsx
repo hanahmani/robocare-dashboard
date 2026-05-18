@@ -1,68 +1,77 @@
 import { MoreVertical } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 import Card from './Card'
-import { Avatar, ChannelTag, StatusBadge } from './Badges'
+import { ChannelTag, StatusBadge, Avatar } from './Badges'
+export default function RecentNotificationsTable({
+notifications,
+loading,
+}) {
+if (loading) {
+return (
+<Card>
+<div className="p-5">Chargement...</div>
+</Card>
+)
+}
 
-export default function RecentNotificationsTable({ notifications = [] }) {
-  const navigate = useNavigate()
+const formatRecipient = (notification) =>
+	notification.recipient || (Array.isArray(notification.to) ? notification.to.join(', ') : notification.to) || 'Unknown'
 
-  return (
-    <Card padding="p-0">
-      <div className="px-5 py-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">Recent Notifications</h3>
-        <button
-          onClick={() => navigate('/notifications')}
-          className="text-xs font-medium text-brand-600 hover:text-brand-700"
-        >
-          View All
-        </button>
-      </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-[11px] uppercase tracking-wider text-gray-500 border-y border-gray-100 bg-gray-50/30">
-            <th className="text-left font-medium px-5 py-2">Recipients</th>
-            <th className="text-left font-medium px-5 py-2">Channel</th>
-            <th className="text-left font-medium px-5 py-2">Status</th>
-            <th className="text-left font-medium px-5 py-2">Timestamp</th>
-            <th className="text-left font-medium px-5 py-2">Action</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {notifications.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-5 py-8 text-center text-sm text-gray-400">
-                No notifications match the current filters.
-              </td>
-            </tr>
-          ) : (
-            notifications.map((n) => (
-              <tr key={n.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-5 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar initials={n.initials} />
-                    <div>
-                      <div className="text-gray-900">{n.recipient}</div>
-                      <div className="text-[11px] text-gray-400 font-mono">ID: {n.id}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-5 py-3">
-                  <ChannelTag channel={n.channel} />
-                </td>
-                <td className="px-5 py-3">
-                  <StatusBadge status={n.status} />
-                </td>
-                <td className="px-5 py-3 text-gray-600 text-sm">{n.timestamp}</td>
-                <td className="px-5 py-3">
-                  <button className="p-1 rounded hover:bg-gray-100 text-gray-400">
-                    <MoreVertical className="w-4 h-4" strokeWidth={1.75} />
-                  </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </Card>
-  )
+const getInitials = (n) => n.initials || ((n.recipient || '').split(/[@\s\.\-\+]/).filter(Boolean).map(s => s[0]?.toUpperCase()).slice(0,2).join('') || '??')
+
+const getDisplayName = (n) => {
+	const r = n.recipient || ''
+	if (r.includes('@')) return r.split('@')[0]
+	return r
+}
+
+const formatChannel = (notification) => notification.channel || notification.type || 'Unknown'
+
+const formatTimestamp = (notification) =>
+	notification.timestamp || notification.sentAt || notification.createdAt || '—'
+
+return (
+	<Card padding="p-0">
+		<div className="px-5 py-4 flex items-center justify-between">
+			<h3 className="text-sm font-semibold text-gray-900">Recent Notifications</h3>
+		</div>
+		<table className="w-full text-sm">
+			<thead>
+				<tr className="text-[11px] uppercase tracking-wider text-gray-500 border-y border-gray-100 bg-gray-50/30">
+					<th className="text-left font-medium px-5 py-2">Recipient</th>
+					<th className="text-left font-medium px-5 py-2">Channel</th>
+					<th className="text-left font-medium px-5 py-2">Status</th>
+					<th className="text-left font-medium px-5 py-2">Date</th>
+					<th className="text-left font-medium px-5 py-2">Action</th>
+				</tr>
+			</thead>
+			<tbody className="divide-y divide-gray-100">
+				{notifications.map((n) => (
+					<tr key={n.id} className="hover:bg-gray-50/50 transition-colors">
+						<td className="px-5 py-3">
+							<div className="flex items-center gap-3">
+								<Avatar initials={getInitials(n)} />
+								<div>
+									<div className="font-medium text-gray-800">{getDisplayName(n)}</div>
+									<div className="text-xs text-gray-500">ID: {n.id}</div>
+								</div>
+							</div>
+						</td>
+						<td className="px-5 py-3">
+							<ChannelTag channel={formatChannel(n)} />
+						</td>
+						<td className="px-5 py-3">
+							<StatusBadge status={n.status || 'Pending'} />
+						</td>
+						<td className="px-5 py-3 text-gray-600 text-sm">{formatTimestamp(n)}</td>
+						<td className="px-5 py-3">
+							<button className="p-1 rounded hover:bg-gray-100 text-gray-400">
+								<MoreVertical className="w-4 h-4" />
+							</button>
+						</td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+	</Card>
+)
 }

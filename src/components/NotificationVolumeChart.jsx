@@ -6,7 +6,7 @@ import {
   notificationVolume7d,
   notificationVolume30d,
   notificationVolume3m,
-} from '../data/mockData'
+} from '../data/chartConfig'
 
 const dataByRange = {
   'Last 24 Hours': notificationVolume,
@@ -64,9 +64,9 @@ export default function NotificationVolumeChart({ dateFilter = 'Last 24 Hours' }
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke="#3b82f6"
+                stroke="#1677ff"
                 strokeWidth={2}
-                dot={{ r: 3, fill: '#3b82f6' }}
+                dot={{ r: 3, fill: '#1677ff' }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>
@@ -74,8 +74,8 @@ export default function NotificationVolumeChart({ dateFilter = 'Last 24 Hours' }
             <AreaChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
               <defs>
                 <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#1677ff" stopOpacity={0.28} />
+                  <stop offset="100%" stopColor="#1677ff" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis
@@ -96,7 +96,7 @@ export default function NotificationVolumeChart({ dateFilter = 'Last 24 Hours' }
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="#3b82f6"
+                stroke="#1677ff"
                 strokeWidth={2}
                 fill="url(#volumeGradient)"
               />

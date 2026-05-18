@@ -1,6 +1,6 @@
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import Card from './Card'
-import { successFailureWeek } from '../data/mockData'
+import { successFailureWeek } from '../data/chartConfig'
 
 export default function SuccessFailureChart() {
   return (
@@ -24,8 +24,8 @@ export default function SuccessFailureChart() {
               }}
               cursor={{ fill: 'rgba(0,0,0,0.02)' }}
             />
-            <Bar dataKey="success" fill="#86efac" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="failure" fill="#fca5a5" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="success" fill="#52c41a" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="failure" fill="#ff4d4f" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

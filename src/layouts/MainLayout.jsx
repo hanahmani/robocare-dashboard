@@ -8,12 +8,15 @@ import {
   Settings,
   RefreshCw,
   User,
+  Send,
+  Inbox,
 } from 'lucide-react'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/send', label: 'Send', icon: Send },
+  { to: '/inbox', label: 'Inbox', icon: Inbox },
   { to: '/notifications', label: 'Notifications', icon: Bell },
-  { to: '/recipients', label: 'Recipients', icon: Users },
   { to: '/templates', label: 'Templates', icon: FileText },
   { to: '/channels', label: 'Channels', icon: Share2 },
   { to: '/settings', label: 'Settings', icon: Settings },
@@ -29,66 +32,79 @@ export default function MainLayout() {
   return (
     <div className="flex min-h-screen bg-white">
       {/* Sidebar */}
-      <aside className="w-56 shrink-0 border-r border-gray-200 bg-white flex flex-col">
-        <div className="px-5 h-14 flex items-center border-b border-gray-200">
-          <span className="font-semibold text-gray-900 text-[15px]">RoboCare Service</span>
+      <aside className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col shadow-sm">
+        <div className="px-6 h-16 flex items-center border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-bold text-sm">
+              RC
+            </div>
+            <div>
+              <div className="font-bold text-gray-900 text-sm">RoboCare</div>
+              <div className="font-semibold text-blue-600 text-xs">Service</div>
+            </div>
+          </div>
         </div>
-        <nav className="flex-1 py-3 px-2">
-          <ul className="space-y-0.5">
+        <nav className="flex-1 py-4 px-3 overflow-y-auto">
+          <ul className="space-y-1">
             {navItems.map(({ to, label, icon: Icon, end }) => (
               <li key={to}>
                 <NavLink
                   to={to}
                   end={end}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                    `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all font-medium ${
                       isActive
-                        ? 'text-brand-600 bg-brand-50 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'text-blue-600 bg-blue-50 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`
                   }
                 >
-                  <Icon className="w-4 h-4" strokeWidth={1.75} />
+                  <Icon className="w-4 h-4" strokeWidth={2} />
                   {label}
                 </NavLink>
               </li>
             ))}
           </ul>
         </nav>
+        <div className="px-3 py-4 border-t border-gray-200">
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gray-50">
+            <User className="w-4 h-4 text-gray-600" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-gray-900">Admin</div>
+              <div className="text-xs text-gray-500 truncate">admin@robocare.io</div>
+            </div>
+          </div>
+        </div>
       </aside>
 
       {/* Main column */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="h-14 border-b border-gray-200 bg-white flex items-center justify-between px-6">
+        <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-8 shadow-sm">
           <div className="flex items-center gap-3">
-            <button
-              className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
-              aria-label="Toggle menu"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-            </button>
-            <h1 className="font-semibold text-gray-900 text-[15px]">{pageTitle}</h1>
+            <h1 className="font-bold text-gray-900">{pageTitle}</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
-              className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
               aria-label="Refresh"
             >
-              <RefreshCw className="w-4 h-4" strokeWidth={1.75} />
+              <RefreshCw className="w-5 h-5" strokeWidth={1.5} />
             </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white text-xs font-medium">
-              <User className="w-4 h-4" />
+            <button
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" strokeWidth={1.5} />
+            </button>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-semibold">
+              A
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto bg-white">
+        <main className="flex-1 overflow-auto bg-gray-50">
           <Outlet />
         </main>
       </div>

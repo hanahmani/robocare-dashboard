@@ -1,0 +1,48 @@
+// Template configuration - Static data for RoboCare notification microservice
+export const templates = [
+  {
+    id: 'TPL-001',
+    name: 'Crop Alert - Critical',
+    channel: 'SMS',
+    language: 'FR',
+    updated: '2 days ago',
+    status: 'Active',
+    content: 'Alerte critique détectée sur votre parcelle. Veuillez intervenir immédiatement.',
+  },
+  {
+    id: 'TPL-002',
+    name: 'Weekly Field Report',
+    channel: 'Email',
+    language: 'FR',
+    updated: '5 days ago',
+    status: 'Active',
+    content: 'Bonjour, voici le rapport hebdomadaire de votre champ. Consultez les données ci-jointes.',
+  },
+  {
+    id: 'TPL-003',
+    name: 'Irrigation Reminder',
+    channel: 'WhatsApp',
+    language: 'FR',
+    updated: '1 week ago',
+    status: 'Active',
+    content: 'Rappel : votre programme d\'irrigation est prévu pour aujourd\'hui. Vérifiez votre système.',
+  },
+  {
+    id: 'TPL-004',
+    name: 'Welcome Email',
+    channel: 'Email',
+    language: 'EN',
+    updated: '2 weeks ago',
+    status: 'Active',
+    content: 'Welcome to RoboCare! Your account is now active. Start monitoring your fields today.',
+  },
+  {
+    id: 'TPL-005',
+    name: 'SMS Alert - Sensor Failure',
+    channel: 'SMS',
+    language: 'EN',
+    updated: '3 weeks ago',
+    status: 'Draft',
+    content: 'Sensor failure detected. Please check your device and reconnect immediately.',
+  },
+]

@@ -1,13 +1,12 @@
-import { Mail, MessageCircle, MessageSquare, Bell, Settings as SettingsIcon } from 'lucide-react'
+import { Mail, MessageCircle, MessageSquare, Settings as SettingsIcon } from 'lucide-react'
 import Card from '../components/Card'
 import { StatusBadge } from '../components/Badges'
-import { channelsConfig } from '../data/mockData'
+import { channelsConfig } from '../data/channelsConfig'
 
 const channelIcons = {
   Email: { Icon: Mail, bg: 'bg-blue-50', color: 'text-blue-600' },
   WhatsApp: { Icon: MessageCircle, bg: 'bg-emerald-50', color: 'text-emerald-600' },
   SMS: { Icon: MessageSquare, bg: 'bg-orange-50', color: 'text-orange-600' },
-  Push: { Icon: Bell, bg: 'bg-purple-50', color: 'text-purple-600' },
 }
 
 export default function ChannelsPage() {
