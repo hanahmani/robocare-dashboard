@@ -14,17 +14,17 @@ export function StatusBadge({ status }) {
   }[String(status || '').toUpperCase()] || status
 
   const styleMap = {
-    Sent: { background: '#f0fdf4', color: '#52c41a', border: '1px solid #bbf7d0' },
-    Failed: { background: '#fff1f0', color: '#ff4d4f', border: '1px solid #ffccc7' },
-    Partial: { background: '#fff7ed', color: '#fa8c16', border: '1px solid #ffe7c2' },
-    Pending: { background: '#f8fafc', color: '#374151', border: '1px solid #e6edf3' },
+      Sent: { background: '#f0fdf4', color: '#10b981', border: '1px solid #bbf7d0' },
+      Failed: { background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
+      Partial: { background: '#fff7ed', color: '#d97706', border: '1px solid #ffedd5' },
+      Pending: { background: '#f8fafc', color: '#374151', border: '1px solid #e6edf3' },
     Draft: { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' },
   }
   const s = styleMap[normalized] || styleMap.Pending
   return (
     <span
       style={{ background: s.background, color: s.color, border: s.border }}
-      className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded`}
+      className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full`}
     >
       {normalized}
     </span>
@@ -32,9 +32,9 @@ export function StatusBadge({ status }) {
 }
 
 const channelMeta = {
-  Email: { icon: Mail, color: '#1677ff' },
-  WhatsApp: { icon: MessageCircle, color: '#52c41a' },
-  SMS: { icon: MessageSquare, color: '#fa8c16' },
+  Email: { icon: Mail, color: '#3b82f6' },
+  WhatsApp: { icon: MessageCircle, color: '#10b981' },
+  SMS: { icon: MessageSquare, color: '#f59e0b' },
 }
 
 export function ChannelTag({ channel }) {

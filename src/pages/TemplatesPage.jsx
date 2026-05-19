@@ -145,59 +145,68 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-slate-50 py-8 px-6">
+      {/* Page Header */}
       <div className="mb-8">
-        <div className="flex items-end justify-between gap-4 mb-4 flex-wrap">
+        <h1 className="text-2xl font-bold text-gray-900">Templates</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage your notification templates for all channels.</p>
+      </div>
+
+      {/* Meta Templates Section */}
+      <div className="mb-8">
+        <div className="flex items-end justify-between gap-4 mb-6 flex-wrap">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">WhatsApp Meta templates</h2>
+            <h2 className="text-lg font-semibold text-gray-900">WhatsApp Meta Templates</h2>
             <p className="text-sm text-gray-500">
-              Templates loaded from your Meta WhatsApp account. Each card shows the header, body and button components.
+              Templates loaded from your Meta WhatsApp account.
             </p>
           </div>
-          <div className="text-sm text-gray-500">{metaTemplates.length} templates</div>
+          <div className="text-sm font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-lg">
+            {metaTemplates.length} templates
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {metaTemplates.map((template) => {
             const fields = getWhatsAppTemplateParameterSchema(template)
 
             return (
-              <Card key={template.id} className="border-brand-100 bg-brand-50/20">
+              <div key={template.id} className="bg-white rounded-xl border border-blue-100 shadow-sm p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3 gap-3">
                   <div>
-                    <div className="text-[11px] text-gray-400 font-mono">{template.id}</div>
+                    <div className="text-[11px] text-gray-400 font-mono mb-1">{template.id}</div>
                     <h3 className="font-semibold text-gray-900">{template.name}</h3>
                   </div>
                   <StatusBadge status={template.status} />
                 </div>
 
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
                   <ChannelTag channel={template.channel} />
-                  <span className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
+                  <span className="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-medium">
                     {template.language}
                   </span>
                 </div>
 
                 <div className="space-y-3 text-sm">
                   {template.components.map((component, index) => (
-                    <div key={`${template.id}-${component.type}-${index}`} className="rounded-md border border-gray-200 bg-white p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-600">
+                    <div key={`${template.id}-${component.type}-${index}`} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-600">
                           {component.type}
                         </span>
                         {component.format && (
-                          <span className="text-[11px] text-gray-400">{component.format}</span>
+                          <span className="text-[11px] text-gray-500">{component.format}</span>
                         )}
                       </div>
                       {component.text && (
-                        <p className="text-xs text-gray-600 whitespace-pre-line">{component.text}</p>
+                        <p className="text-xs text-gray-700 whitespace-pre-line">{component.text}</p>
                       )}
                       {component.buttons?.length > 0 && (
                         <div className="mt-2 space-y-2">
                           {component.buttons.map((button, buttonIndex) => (
-                            <div key={`${button.text}-${buttonIndex}`} className="rounded border border-dashed border-gray-200 p-2">
-                              <div className="text-xs font-medium text-gray-700">{button.text}</div>
-                              <div className="text-[11px] text-gray-500 break-all">{button.url}</div>
+                            <div key={`${button.text}-${buttonIndex}`} className="rounded border border-dashed border-gray-300 p-2 bg-white">
+                              <div className="text-xs font-medium text-gray-800">{button.text}</div>
+                              <div className="text-[11px] text-gray-600 break-all">{button.url}</div>
                             </div>
                           ))}
                         </div>
@@ -206,110 +215,113 @@ export default function TemplatesPage() {
                   ))}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-500">
-                  {fields.length > 0 ? `${fields.length} parameter field${fields.length > 1 ? 's' : ''}` : 'No dynamic parameters'}
+                <div className="mt-4 pt-4 border-t border-gray-200 text-xs text-gray-600">
+                  {fields.length > 0 ? `${fields.length} parameter${fields.length > 1 ? 's' : ''}` : 'No parameters'}
                 </div>
-              </Card>
+              </div>
             )
           })}
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
-        <div className="flex items-center gap-2">
-          <div className="relative w-64">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-              strokeWidth={1.75}
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search templates..."
-              className="w-full pl-9 pr-8 py-1.5 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 placeholder:text-gray-400"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          <select
-            value={channelFilter}
-            onChange={(e) => setChannelFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-gray-700"
-          >
-            <option value="All">All Channels</option>
-            {CHANNELS.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          onClick={openAdd}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-brand-600 text-white rounded-md hover:bg-brand-700"
-        >
-          <Plus className="w-3.5 h-3.5" strokeWidth={2} />
-          New Template
-        </button>
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="py-16 text-center text-sm text-gray-400">
-          No templates match your search.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((t) => (
-            <Card key={t.id} className="hover:border-gray-300 transition-colors">
-              <div className="flex items-start justify-between mb-3">
-                <div className="text-[11px] text-gray-400 font-mono">{t.id}</div>
-                <StatusBadge status={t.status} />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1">{t.name}</h3>
-              {t.content && (
-                <p className="text-xs text-gray-500 line-clamp-2 mt-1">{t.content}</p>
+      {/* Custom Templates Section */}
+      <div>
+        <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 min-w-64">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search templates..."
+                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               )}
-              <div className="flex items-center justify-between mt-3">
-                <ChannelTag channel={t.channel} />
-                <span className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
-                  {t.language}
-                </span>
-              </div>
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs text-gray-500">Updated {t.updated}</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => openEdit(t)}
-                    className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
-                    title="Edit"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  </button>
-                  <button
-                    onClick={() => handleDuplicate(t)}
-                    className="p-1.5 rounded hover:bg-gray-100 text-gray-500"
-                    title="Duplicate"
-                  >
-                    <Copy className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(t.id)}
-                    className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                  </button>
+            </div>
+            <select
+              value={channelFilter}
+              onChange={(e) => setChannelFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-gray-700"
+            >
+              <option value="All">All Channels</option>
+              {CHANNELS.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={openAdd}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Template
+          </button>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="py-16 text-center">
+            <p className="text-gray-500 font-medium">No templates found</p>
+            <p className="text-gray-400 text-sm mt-1">Try adjusting your filters or create a new template</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filtered.map((t) => (
+              <div key={t.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="text-[11px] text-gray-400 font-mono">{t.id}</div>
+                  <StatusBadge status={t.status} />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-1">{t.name}</h3>
+                {t.content && (
+                  <p className="text-xs text-gray-500 line-clamp-2 mt-2">{t.content}</p>
+                )}
+                <div className="flex items-center justify-between mt-4 pb-4 border-b border-gray-200">
+                  <ChannelTag channel={t.channel} />
+                  <span className="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-medium">
+                    {t.language}
+                  </span>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-gray-600">Updated {t.updated}</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEdit(t)}
+                      className="p-1.5 rounded hover:bg-blue-50 text-gray-600 hover:text-blue-600 transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDuplicate(t)}
+                      className="p-1.5 rounded hover:bg-blue-50 text-gray-600 hover:text-blue-600 transition-colors"
+                      title="Duplicate"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(t.id)}
+                      className="p-1.5 rounded hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {showModal && (
         <Modal

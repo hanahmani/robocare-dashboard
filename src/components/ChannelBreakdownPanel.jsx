@@ -11,7 +11,7 @@ export default function ChannelBreakdownPanel({ channelFilter = 'All Channels', 
   }) : null
 
   // ensure static fallback uses brand colors
-  const baseStatic = staticChannelBreakdown.map((c) => ({ ...c, color: c.name === 'Email' ? '#1677ff' : c.name === 'WhatsApp' ? '#52c41a' : '#fa8c16' }))
+  const baseStatic = staticChannelBreakdown.map((c) => ({ ...c, color: c.name === 'Email' ? '#3b82f6' : c.name === 'WhatsApp' ? '#10b981' : '#f59e0b' }))
   const base = dataFromStats || baseStatic
 
   const total = base.reduce((s, it) => s + (it.value || 0), 0)
@@ -29,18 +29,18 @@ export default function ChannelBreakdownPanel({ channelFilter = 'All Channels', 
         {displayData.map((c) => (
           <div key={c.name}>
             <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.color }} />
-                <span className="text-sm text-gray-700">{c.name}</span>
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                <span className="text-sm text-gray-700 font-medium">{c.name}</span>
               </div>
-              <span className="text-xs text-gray-500">
-                {c.label} ({c.percent}%)
+              <span className="text-sm text-gray-500">
+                {c.percent}% • {c.label}
               </span>
             </div>
             <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${c.percent}%`, backgroundColor: c.color }}
+                style={{ width: `${c.percent}%`, backgroundColor: c.color, height: 6 }}
               />
             </div>
           </div>
@@ -56,7 +56,7 @@ export default function ChannelBreakdownPanel({ channelFilter = 'All Channels', 
                 cx="50%"
                 cy="50%"
                 innerRadius={55}
-                outerRadius={75}
+                outerRadius={72}
                 paddingAngle={2}
                 dataKey="value"
                 strokeWidth={0}

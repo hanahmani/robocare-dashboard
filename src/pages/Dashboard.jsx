@@ -32,7 +32,7 @@ import {
   Tooltip,
 } from 'chart.js'
 import { Bar, Line } from 'react-chartjs-2'
-import { fetchHealth, fetchSentNotifications, computeStats, buildVolumeByDay, buildVolumeByHour, normalizeNotification } from '../api/Notificationapi'
+import { fetchHealth, fetchSentNotifications, computeStats, buildVolumeByDay, buildVolumeByHour, buildVolumeByMonth, buildVolumeBy6Months, buildVolumeByYear, normalizeNotification } from '../api/Notificationapi'
 import styles from './Dashboard.module.css'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend, Filler)
@@ -40,6 +40,9 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointEleme
 const RANGE_OPTIONS = [
   { value: '24h', label: 'Last 24 Hours' },
   { value: '7d', label: 'Last 7 Days' },
+  { value: '1m', label: '1 Month' },
+  { value: '6m', label: '6 Months' },
+  { value: '1y', label: '1 Year' },
   { value: 'all', label: 'All time' },
 ]
 
@@ -176,7 +179,21 @@ export default function Dashboard() {
   const recentRows = useMemo(() => filteredNotifications.slice(0, 8).map((notification) => normalizeNotification(notification)), [filteredNotifications])
 
   const volumeDataset = useMemo(() => {
-    const source = volumeMode === '7d' ? buildVolumeByDay(allNotifications) : buildVolumeByHour(allNotifications)
+    let source
+    
+    if (volumeMode === '24h') {
+      source = buildVolumeByHour(allNotifications)
+    } else if (volumeMode === '7d') {
+      source = buildVolumeByDay(allNotifications)
+    } else if (volumeMode === '1m') {
+      source = buildVolumeByMonth(allNotifications)
+    } else if (volumeMode === '6m') {
+      source = buildVolumeBy6Months(allNotifications)
+    } else if (volumeMode === '1y') {
+      source = buildVolumeByYear(allNotifications)
+    } else {
+      source = buildVolumeByDay(allNotifications)
+    }
 
     return {
       labels: source.map((item) => item.time),
@@ -362,12 +379,11 @@ export default function Dashboard() {
             title="Notification volume"
             extra={
               <div className={styles.toggleGroup}>
-                <Button type={volumeMode === '24h' ? 'primary' : 'default'} onClick={() => setVolumeMode('24h')}>
-                  24h
-                </Button>
-                <Button type={volumeMode === '7d' ? 'primary' : 'default'} onClick={() => setVolumeMode('7d')}>
-                  7j
-                </Button>
+                {['24h', '7d', '1m', '6m', '1y'].map((mode) => (
+                  <Button key={mode} type={volumeMode === mode ? 'primary' : 'default'} onClick={() => setVolumeMode(mode)}>
+                    {mode === '24h' ? '24h' : mode === '7d' ? '7j' : mode === '1m' ? '1 mois' : mode === '6m' ? '6 mois' : '1 ans'}
+                  </Button>
+                ))}
               </div>
             }
             className={styles.panelCard}

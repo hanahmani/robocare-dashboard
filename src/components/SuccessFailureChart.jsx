@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip } from 'recharts'
+import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
 import Card from './Card'
 import { successFailureWeek } from '../data/chartConfig'
 
@@ -14,7 +14,9 @@ export default function SuccessFailureChart() {
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickFormatter={(v) => String(v).toUpperCase()}
             />
+            <YAxis hide />
             <Tooltip
               contentStyle={{
                 background: 'white',
@@ -24,8 +26,8 @@ export default function SuccessFailureChart() {
               }}
               cursor={{ fill: 'rgba(0,0,0,0.02)' }}
             />
-            <Bar dataKey="success" fill="#52c41a" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="failure" fill="#ff4d4f" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="success" fill="#10b981" radius={[4, 4, 0, 0]} barSize={12} />
+            <Bar dataKey="failure" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={12} />
           </BarChart>
         </ResponsiveContainer>
       </div>

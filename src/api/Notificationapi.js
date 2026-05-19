@@ -303,3 +303,59 @@ export function buildVolumeByDay(notifications) {
   })
   return Object.entries(buckets).map(([time, value]) => ({ time, value }))
 }
+
+export function buildVolumeByMonth(notifications) {
+  const buckets = {}
+  // Last 30 days
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    const key = d.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+    buckets[key] = 0
+  }
+  notifications.forEach((n) => {
+    const d = new Date(n.sentAt || n.createdAt)
+    const key = d.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+    if (buckets[key] !== undefined) buckets[key]++
+  })
+  return Object.entries(buckets).map(([time, value]) => ({ time, value }))
+}
+
+export function buildVolumeBy6Months(notifications) {
+  const buckets = {}
+  // Last 26 weeks
+  for (let i = 25; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i * 7)
+    const weekStart = new Date(d)
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+    const key = weekStart.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+    buckets[key] = 0
+  }
+  notifications.forEach((n) => {
+    const d = new Date(n.sentAt || n.createdAt)
+    const weekStart = new Date(d)
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+    const key = weekStart.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' })
+    if (buckets[key] !== undefined) buckets[key]++
+  })
+  return Object.entries(buckets).map(([time, value]) => ({ time, value }))
+}
+
+export function buildVolumeByYear(notifications) {
+  const buckets = {}
+  const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+  // Last 12 months
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date()
+    d.setMonth(d.getMonth() - i)
+    const key = `${months[d.getMonth()]} ${d.getFullYear()}`
+    buckets[key] = 0
+  }
+  notifications.forEach((n) => {
+    const d = new Date(n.sentAt || n.createdAt)
+    const key = `${months[d.getMonth()]} ${d.getFullYear()}`
+    if (buckets[key] !== undefined) buckets[key]++
+  })
+  return Object.entries(buckets).map(([time, value]) => ({ time, value }))
+}

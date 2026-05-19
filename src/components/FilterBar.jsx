@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Calendar, ChevronDown, Search, X } from 'lucide-react'
+import { Calendar, ChevronDown, Search, X, Sliders } from 'lucide-react'
 
 const DATE_OPTIONS = ['Last 24 Hours', 'Last 7 Days', 'Last 30 Days', 'Last 3 Months']
 const CHANNEL_OPTIONS = ['All Channels', 'Email', 'WhatsApp', 'SMS']
@@ -23,10 +23,10 @@ function Dropdown({ options, value, onChange, icon }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm border rounded-md transition-colors ${
+        className={`inline-flex items-center gap-2 px-3 py-1.5 text-[13px] border rounded-md transition-colors ${
           isActive
-            ? 'bg-brand-50 border-brand-300 text-brand-700'
-            : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+            ? 'bg-brand-50 border-gray-200 text-brand-700'
+            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
         }`}
       >
         {icon}
@@ -41,7 +41,7 @@ function Dropdown({ options, value, onChange, icon }) {
             <button
               key={opt}
               onClick={() => { onChange(opt); setOpen(false) }}
-              className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+              className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
                 value === opt
                   ? 'text-brand-600 font-medium bg-brand-50'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -80,6 +80,7 @@ export default function FilterBar({ filters, onFilterChange }) {
         options={STATUS_OPTIONS}
         value={filters.status}
         onChange={(v) => onFilterChange({ ...filters, status: v })}
+        icon={<Sliders className="w-4 h-4 text-gray-500" strokeWidth={1.75} />}
       />
       <div className="relative flex-1 max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.75} />
@@ -88,7 +89,7 @@ export default function FilterBar({ filters, onFilterChange }) {
           value={filters.search}
           onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
           placeholder="Search recipients or IDs..."
-          className="w-full pl-9 pr-8 py-1.5 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 placeholder:text-gray-400"
+          className="w-full pl-9 pr-8 py-1.5 text-[13px] bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 placeholder:text-gray-400"
         />
         {filters.search && (
           <button

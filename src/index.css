@@ -11,20 +11,27 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: #ffffff;
   color: #111827;
+  font-size: 14px;
+  line-height: 1.35;
 }
 
 /* Scrollbar customization */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f9fafb;
+  background: #f3f4f6;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 4px;
+  background: #c7c7c7;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+/* Main content background */
+main {
+  background-color: #f9fafb;
 }

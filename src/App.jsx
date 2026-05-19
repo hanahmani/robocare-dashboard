@@ -6,6 +6,7 @@ import InboxPage from './pages/InboxPage'
 import TemplatesPage from './pages/TemplatesPage'
 import ChannelsPage from './pages/ChannelsPage'
 import SettingsPage from './pages/SettingsPage'
+import SendPage from './pages/SendPage'
 import SendNotificationPage from './pages/SendWhatsappPage'
 
 export default function App() {
@@ -13,7 +14,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<MainLayout />}>
         <Route index element={<Dashboard />} />
-        <Route path="send" element={<SendNotificationPage />} />
+        <Route path="send" element={<SendPage />} />
         <Route path="send-whatsapp" element={<SendNotificationPage />} />
         <Route path="inbox" element={<InboxPage />} />
         <Route path="notifications" element={<NotificationsPage />} />

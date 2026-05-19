@@ -157,43 +157,50 @@
 .criticalCard {
   background: #fcebeb;
   border-color: #f7c1c1;
+  max-height: 320px;
+  overflow-y: auto;
 }
 
 .criticalCard :global(.ant-card-body),
 .criticalCard :global(.ant-card-head) {
   background: #fcebeb;
+  padding: 12px;
 }
 
 .criticalList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
 }
 
 .criticalItem {
   border-radius: 8px;
   border: 1px solid #f7c1c1;
   background: rgba(255, 255, 255, 0.55);
-  padding: 12px;
+  padding: 8px;
+  font-size: 12px;
 }
 
 .criticalTitle {
   color: #791f1f;
   font-weight: 700;
+  font-size: 12px;
 }
 
 .criticalDetail,
 .criticalTime {
   color: #5f5f5f;
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: 11px;
+  margin-top: 2px;
 }
 
 .criticalError {
   color: #a61d24;
-  font-size: 13px;
-  margin-top: 8px;
-  line-height: 1.5;
+  font-size: 11px;
+  margin-top: 4px;
+  line-height: 1.4;
 }
 
 .healthCard {

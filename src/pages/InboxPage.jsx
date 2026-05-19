@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, RefreshCw, Mail, MessageCircle, Reply, Link as LinkIcon } from 'lucide-react'
-import Card from '../components/Card'
-import { ChannelTag } from '../components/Badges'
+import { Search, RefreshCw, Mail, MessageCircle, Reply, Link as LinkIcon, Inbox, Phone } from 'lucide-react'
 import { getInboxNotifications } from '../services/notificationService'
 
 const LAST_24_HOURS_MS = 24 * 60 * 60 * 1000
@@ -110,11 +108,38 @@ function ReplyBadge({ reply }) {
   )
 }
 
-function MessagePreview({ title, message }) {
+function MessagePreview({ title, message, compact = false }) {
   const [expanded, setExpanded] = useState(false)
   const safeMessage = sanitizeDisplayText(message)
   const preview = getPreviewSentence(safeMessage)
   const hasMore = safeMessage && safeMessage !== preview
+
+  if (compact) {
+    return (
+      <div className="space-y-1">
+        {title && <div className="text-sm font-medium text-gray-900">{title}</div>}
+        <div className="text-xs text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+          {preview}
+        </div>
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            className="text-xs font-medium text-blue-600 hover:underline mt-1"
+          >
+            {expanded ? 'Voir moins' : 'Voir plus'}
+          </button>
+        )}
+        {expanded && (
+          <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="text-xs text-gray-700 whitespace-pre-line break-words leading-relaxed">
+              {safeMessage}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-1">
@@ -243,59 +268,82 @@ export default function InboxPage() {
   }, [whatsapp, emails])
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="min-h-screen bg-slate-50 py-8 px-6">
+      {/* Page Header */}
+      <div className="flex items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Inbox notifications</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            WhatsApp et emails reçus, avec détection automatique des réponses via `sentId`.
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Inbox notifications</h1>
+          <p className="text-sm text-gray-500 mt-1">WhatsApp et emails reçus, avec détection automatique des réponses.</p>
         </div>
         <button
           onClick={loadInbox}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50"
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card>
-          <div className="text-sm text-gray-500">Total reçus</div>
-          <div className="mt-2 text-2xl font-semibold text-gray-900">{stats.total}</div>
-        </Card>
-        <Card>
-          <div className="text-sm text-gray-500">WhatsApp</div>
-          <div className="mt-2 text-2xl font-semibold text-gray-900">{stats.whatsapp}</div>
-        </Card>
-        <Card>
-          <div className="text-sm text-gray-500">Emails</div>
-          <div className="mt-2 text-2xl font-semibold text-gray-900">{stats.emails}</div>
-        </Card>
-        <Card>
-          <div className="text-sm text-gray-500">Réponses détectées</div>
-          <div className="mt-2 text-2xl font-semibold text-gray-900">{stats.replied}</div>
-        </Card>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {/* Total reçus */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-l-blue-500">
+          <div className="flex items-start justify-between">
+            <div className="text-sm font-medium text-gray-500">Total reçus</div>
+            <Inbox className="w-4 h-4 text-blue-500 opacity-60" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</div>
+        </div>
+
+        {/* WhatsApp */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-l-green-500">
+          <div className="flex items-start justify-between">
+            <div className="text-sm font-medium text-gray-500">WhatsApp</div>
+            <MessageCircle className="w-4 h-4 text-green-500 opacity-60" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mt-2">{stats.whatsapp}</div>
+        </div>
+
+        {/* Emails */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-l-purple-500">
+          <div className="flex items-start justify-between">
+            <div className="text-sm font-medium text-gray-500">Emails</div>
+            <Mail className="w-4 h-4 text-purple-500 opacity-60" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mt-2">{stats.emails}</div>
+        </div>
+
+        {/* Réponses détectées */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 border-l-4 border-l-amber-500">
+          <div className="flex items-start justify-between">
+            <div className="text-sm font-medium text-gray-500">Réponses détectées</div>
+            <Reply className="w-4 h-4 text-amber-500 opacity-60" />
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mt-2">{stats.replied}</div>
+        </div>
       </div>
 
-      <Card>
-        <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-          <div className="relative w-full md:w-80">
+      {/* Main Table Container */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* Filters Row */}
+        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-gray-200 bg-white">
+          <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
+              type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher expéditeur, message, sujet..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
             />
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             <select
               value={channelFilter}
               onChange={(e) => setChannelFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 cursor-pointer focus:outline-none hover:border-gray-300 transition-colors"
             >
               <option value="All">Tous les canaux</option>
               <option value="WhatsApp">WhatsApp</option>
@@ -304,7 +352,7 @@ export default function InboxPage() {
             <select
               value={replyFilter}
               onChange={(e) => setReplyFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 cursor-pointer focus:outline-none hover:border-gray-300 transition-colors"
             >
               <option value="All">Tous</option>
               <option value="Replied">Réponses</option>
@@ -313,71 +361,134 @@ export default function InboxPage() {
           </div>
         </div>
 
+        {/* Error Message */}
         {error && (
-          <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="px-5 py-3 border-b border-red-200 bg-red-50 text-sm text-red-700">
             {error}
           </div>
         )}
 
+        {/* Table Content */}
         {loading ? (
-          <div className="py-10 text-center text-sm text-gray-500">Chargement...</div>
+          <div className="divide-y divide-gray-200">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="px-5 py-4 flex items-center gap-4 animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded" />
+                <div className="h-8 w-24 bg-gray-200 rounded" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                </div>
+                <div className="h-6 w-20 bg-gray-200 rounded" />
+              </div>
+            ))}
+          </div>
         ) : items.length === 0 ? (
-          <div className="py-10 text-center text-sm text-gray-400">Aucune notification reçue trouvée.</div>
+          <div className="py-16 text-center">
+            <Inbox className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">Aucun message trouvé</p>
+            <p className="text-gray-400 text-sm mt-1">Essayez de modifier vos filtres</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
-                <tr className="text-[11px] uppercase tracking-wider text-gray-500 border-b border-gray-100 bg-gray-50/40">
-                  <th className="text-left font-medium px-4 py-3">Canal</th>
-                  <th className="text-left font-medium px-4 py-3">Expéditeur</th>
-                  <th className="text-left font-medium px-4 py-3">Message / Sujet</th>
-                  <th className="text-left font-medium px-4 py-3">Reçu le</th>
-                  <th className="text-left font-medium px-4 py-3">Réponse ?</th>
-                  <th className="text-left font-medium px-4 py-3">ID lié</th>
+                <tr className="bg-slate-50 border-b border-gray-200">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Canal</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Expéditeur</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Message / Sujet</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Reçu le</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Réponse ?</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID lié</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-200">
                 {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors align-top">
-                    <td className="px-4 py-3">
-                      <ChannelTag channel={item.channel} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-gray-900">{item.sender}</div>
-                      {item.senderDetail && (
-                        <div className="text-[11px] text-gray-500 mt-0.5">{item.senderDetail}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 max-w-xl">
-                      <MessagePreview title={item.title} message={item.preview} />
-                      {item.original && (
-                        <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
-                          <div className="font-medium text-gray-700 mb-1">Message d'origine</div>
-                          <div className="mb-1">
-                            <span className="text-gray-500">Source:</span> {item.originalLabel}
-                          </div>
-                          <MessagePreview message={item.originalPreview} />
+                  <tr key={item.id} className="bg-white hover:bg-slate-50 transition-colors">
+                    {/* Canal */}
+                    <td className="px-5 py-4">
+                      {item.channel === 'WhatsApp' ? (
+                        <div className="flex items-center gap-1.5">
+                          <MessageCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-sm font-medium text-green-700">WhatsApp</span>
+                        </div>
+                      ) : item.channel === 'Email' ? (
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="w-4 h-4 text-purple-500" />
+                          <span className="text-sm font-medium text-purple-700">Email</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm font-medium text-blue-700">SMS</span>
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{formatDateTime(item.receivedAt)}</td>
-                    <td className="px-4 py-3">
-                      <ReplyBadge reply={item.reply} />
-                      <div className="mt-2 text-[11px] text-gray-500">{item.replyNote}</div>
+
+                    {/* Expéditeur */}
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
+                            item.channel === 'WhatsApp'
+                              ? 'bg-green-500'
+                              : item.channel === 'Email'
+                                ? 'bg-purple-500'
+                                : 'bg-blue-500'
+                          }`}
+                        >
+                          {item.sender.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{item.sender}</div>
+                          {item.senderDetail && <div className="text-xs text-gray-400">{item.senderDetail}</div>}
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+
+                    {/* Message / Sujet */}
+                    <td className="px-5 py-4 max-w-2xl">
+                      <MessagePreview title={item.title} message={item.preview} compact={true} />
+                      {item.original && (
+                        <div className="mt-3 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2">
+                          <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Message d'origine</div>
+                          <div className="text-xs text-gray-500 mb-1">Source: {item.originalLabel}</div>
+                          <MessagePreview message={item.originalPreview} compact={true} />
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Reçu le */}
+                    <td className="px-5 py-4 text-sm text-gray-600 whitespace-nowrap">{formatDateTime(item.receivedAt)}</td>
+
+                    {/* Réponse ? */}
+                    <td className="px-5 py-4">
+                      {item.reply ? (
+                        <div className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 rounded-full px-2.5 py-1">
+                          <Reply className="w-3 h-3" />
+                          <span className="text-xs font-medium">Réponse</span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center bg-gray-100 text-gray-500 rounded-full px-2.5 py-1">
+                          <span className="text-xs font-medium">Nouveau</span>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* ID lié */}
+                    <td className="px-5 py-4">
                       {item.linkedSentId ? (
                         <button
                           type="button"
                           onClick={() => navigate(`/notifications?focus=${encodeURIComponent(String(item.linkedSentId))}`)}
-                          className="inline-flex items-center gap-1 text-brand-600 hover:underline"
+                          className="inline-flex items-center gap-1 text-blue-600 font-medium text-sm hover:underline transition-colors"
                           title="Open linked sent notification"
                         >
-                          <LinkIcon className="w-3.5 h-3.5" />
+                          <LinkIcon className="w-3 h-3" />
                           #{item.linkedSentId}
                         </button>
                       ) : (
-                        '—'
+                        <span className="text-gray-400">—</span>
                       )}
                     </td>
                   </tr>
@@ -386,7 +497,7 @@ export default function InboxPage() {
             </table>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   )
 }
