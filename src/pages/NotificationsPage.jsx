@@ -59,22 +59,30 @@ function Field({ label, children }) {
 
 function getMessagePreview(notification) {
   const message = notification.fullMessage || notification.message || notification.bodyText || notification.subject || '—'
-  const lines = String(message).split('\n').filter(Boolean)
-  const preview = lines.slice(0, 2).join(' • ') || message
-  const remaining = lines.slice(2).join(' • ')
+  const compactMessage = String(message).split('\n').join(' ').replace(/\s+/g, ' ').trim()
+  const sentenceMatch = compactMessage.match(/^.*?[.!?](?:\s|$)/)
+  const preview = sentenceMatch
+    ? sentenceMatch[0].trim()
+    : (compactMessage.split(' ').length > 18 ? `${compactMessage.split(' ').slice(0, 18).join(' ')}...` : compactMessage || '—')
   return {
     preview: preview || message,
-    remaining,
+    remaining: compactMessage !== preview,
   }
 }
 
 function NotificationMessagePreview({ notification, onOpenDetails }) {
+  const [expanded, setExpanded] = useState(false)
   const { preview, remaining } = getMessagePreview(notification)
+  const fullMessage = notification.fullMessage || notification.message || notification.bodyText || notification.subject || '—'
 
   return (
     <div className="space-y-2">
-      <div className="text-gray-900 text-sm leading-6 break-words whitespace-normal">
-        {preview}
+      <div
+        className={`text-gray-900 text-sm leading-6 break-words ${
+          expanded ? 'whitespace-pre-line' : 'whitespace-nowrap overflow-hidden text-ellipsis'
+        }`}
+      >
+        {expanded ? fullMessage : preview}
       </div>
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
         {notification.templateName && <span className="px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200">{notification.templateName}</span>}
@@ -83,10 +91,10 @@ function NotificationMessagePreview({ notification, onOpenDetails }) {
       </div>
       <button
         type="button"
-        onClick={onOpenDetails}
+        onClick={() => setExpanded((value) => !value)}
         className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
       >
-        Voir plus
+        {expanded ? 'Voir moins' : 'Voir plus'}
         <ChevronRight className="w-3.5 h-3.5" />
       </button>
     </div>
@@ -319,7 +327,7 @@ export default function NotificationsPage() {
                   </td>
                   <td className="px-5 py-3 max-w-xl">
                     <NotificationMessagePreview notification={n} onOpenDetails={() => openDetails(n)} />
-                    {n.errorMessage && (
+                    {n.errorMessage && String(n.status).toLowerCase() !== 'failed' && (
                       <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 whitespace-pre-wrap break-words">
                         Info: {n.errorMessage}
                       </div>
@@ -388,7 +396,7 @@ export default function NotificationsPage() {
               </div>
             )}
 
-            {selectedNotification.errorMessage && (
+            {selectedNotification.errorMessage && String(selectedNotification.status).toLowerCase() !== 'failed' && (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 whitespace-pre-wrap">
                 <span className="font-medium">Error:</span> {selectedNotification.errorMessage}
               </div>

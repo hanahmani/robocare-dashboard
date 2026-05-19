@@ -5,11 +5,54 @@ import Card from '../components/Card'
 import { ChannelTag } from '../components/Badges'
 import { getInboxNotifications } from '../services/notificationService'
 
+const LAST_24_HOURS_MS = 24 * 60 * 60 * 1000
+const ERROR_TEXT_PATTERN = /(failed|error|exception|traceback|stack trace)/i
+
 function formatDateTime(value) {
   if (!value) return '—'
   const date = typeof value === 'number' && value < 1e12 ? new Date(value * 1000) : new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
   return date.toLocaleString('fr-FR')
+}
+
+function parseDate(value) {
+  if (!value) return null
+  const date = typeof value === 'number' && value < 1e12 ? new Date(value * 1000) : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function isWithinLast24Hours(value) {
+  const date = parseDate(value)
+  if (!date) return false
+  return Date.now() - date.getTime() <= LAST_24_HOURS_MS
+}
+
+function normalizeText(value = '') {
+  return String(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function sanitizeDisplayText(value) {
+  const text = String(value || '')
+  if (!text) return ''
+
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !ERROR_TEXT_PATTERN.test(line))
+    .join('\n')
+}
+
+function getPreviewSentence(value) {
+  const text = sanitizeDisplayText(value).trim()
+  if (!text) return '—'
+
+  const compactText = text.split('\n').join(' ').replace(/\s+/g, ' ').trim()
+  const sentenceMatch = compactText.match(/^.*?[.!?](?:\s|$)/)
+  if (sentenceMatch) return sentenceMatch[0].trim()
+
+  const words = compactText.split(' ')
+  return words.length > 18 ? `${words.slice(0, 18).join(' ')}...` : compactText || '—'
 }
 
 function formatWhatsapp(item) {
@@ -67,6 +110,35 @@ function ReplyBadge({ reply }) {
   )
 }
 
+function MessagePreview({ title, message }) {
+  const [expanded, setExpanded] = useState(false)
+  const safeMessage = sanitizeDisplayText(message)
+  const preview = getPreviewSentence(safeMessage)
+  const hasMore = safeMessage && safeMessage !== preview
+
+  return (
+    <div className="space-y-1">
+      {title && <div className="font-medium text-gray-900">{title}</div>}
+      <div
+        className={`text-xs text-gray-600 mt-0.5 leading-5 ${
+          expanded ? 'whitespace-pre-line break-words' : 'whitespace-nowrap overflow-hidden text-ellipsis'
+        }`}
+      >
+        {expanded ? safeMessage : preview}
+      </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          className="text-xs font-medium text-brand-600 hover:underline"
+        >
+          {expanded ? 'Voir moins' : 'Voir plus'}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function InboxPage() {
   const navigate = useNavigate()
   const [whatsapp, setWhatsapp] = useState([])
@@ -111,6 +183,14 @@ export default function InboxPage() {
   }, [sent])
 
   const items = useMemo(() => {
+    const normalizedSearch = normalizeText(search)
+    const recentTerms = ['nouveau', 'nouveaux', 'new', 'novaeux']
+    const recentQuery = recentTerms.some((term) => normalizedSearch.includes(term))
+    const searchText = normalizedSearch
+      .split(/\s+/)
+      .filter(Boolean)
+      .filter((term) => !recentTerms.includes(term))
+      .join(' ')
     const merged = [
       ...whatsapp.map(formatWhatsapp),
       ...emails.map(formatEmail),
@@ -120,14 +200,14 @@ export default function InboxPage() {
       .filter((item) => {
         if (channelFilter !== 'All' && item.channel !== channelFilter) return false
         if (replyFilter === 'Replied' && !item.reply) return false
-        if (replyFilter === 'New' && item.reply) return false
+        if (replyFilter === 'New' && !isWithinLast24Hours(item.receivedAt)) return false
+        if (recentQuery && !isWithinLast24Hours(item.receivedAt)) return false
 
-        if (search) {
-          const q = search.toLowerCase()
+        if (searchText) {
           const haystack = [item.sender, item.senderDetail, item.preview, item.title, String(item.linkedSentId || ''), String(item.originId || '')]
             .join(' ')
             .toLowerCase()
-          if (!haystack.includes(q)) return false
+          if (!haystack.includes(searchText)) return false
         }
 
         return true
@@ -269,15 +349,14 @@ export default function InboxPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 max-w-xl">
-                      <div className="font-medium text-gray-900">{item.title}</div>
-                      <div className="text-gray-600 mt-0.5 whitespace-pre-line break-words">{item.preview}</div>
+                      <MessagePreview title={item.title} message={item.preview} />
                       {item.original && (
                         <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
                           <div className="font-medium text-gray-700 mb-1">Message d'origine</div>
                           <div className="mb-1">
                             <span className="text-gray-500">Source:</span> {item.originalLabel}
                           </div>
-                          <div className="whitespace-pre-line break-words">{item.originalPreview}</div>
+                          <MessagePreview message={item.originalPreview} />
                         </div>
                       )}
                     </td>
