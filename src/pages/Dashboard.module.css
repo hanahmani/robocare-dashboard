@@ -1,0 +1,242 @@
+.dashboardPage {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loadingState {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorBanner {
+  border-radius: 8px;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.filterSelect {
+  min-width: 180px;
+  flex: 0 0 auto;
+}
+
+.searchInput {
+  min-width: 260px;
+  flex: 1 1 260px;
+}
+
+.refreshButton {
+  flex: 0 0 auto;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.metricCard {
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.metricCard :global(.ant-card-body) {
+  background: #fafafa;
+}
+
+.metricLabel {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8c8c8c;
+  margin-bottom: 8px;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panelCard {
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.toggleGroup {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.chartBox {
+  height: 280px;
+}
+
+.chartBoxSmall {
+  height: 260px;
+}
+
+.viewAllLink {
+  font-weight: 600;
+}
+
+.recentTable :global(.ant-table) {
+  background: transparent;
+}
+
+.recentTable :global(.ant-table-thead > tr > th) {
+  background: #fafafa;
+}
+
+.recipientCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recipientAvatar {
+  flex-shrink: 0;
+}
+
+.recipientPrimary {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.recipientSecondary {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.channelCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.channelList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.channelRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.channelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.criticalCard {
+  background: #fcebeb;
+  border-color: #f7c1c1;
+}
+
+.criticalCard :global(.ant-card-body),
+.criticalCard :global(.ant-card-head) {
+  background: #fcebeb;
+}
+
+.criticalList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.criticalItem {
+  border-radius: 8px;
+  border: 1px solid #f7c1c1;
+  background: rgba(255, 255, 255, 0.55);
+  padding: 12px;
+}
+
+.criticalTitle {
+  color: #791f1f;
+  font-weight: 700;
+}
+
+.criticalDetail,
+.criticalTime {
+  color: #5f5f5f;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.criticalError {
+  color: #a61d24;
+  font-size: 13px;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.healthCard {
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  margin-top: auto;
+}
+
+.healthRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.healthLabel {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.healthMeta {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+@media (max-width: 1200px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboardPage {
+    padding: 8px;
+  }
+
+  .filterSelect,
+  .searchInput,
+  .refreshButton {
+    width: 100%;
+  }
+
+  .chartBox,
+  .chartBoxSmall {
+    height: 240px;
+  }
+}
