@@ -18,6 +18,7 @@ const navItems = [
   { to: '/send', label: 'Send', icon: Send },
   { to: '/inbox', label: 'Inbox', icon: Inbox },
   { to: '/notifications', label: 'Notifications', icon: Bell },
+  { to: '/recipients', label: 'Recipients', icon: Users },
   { to: '/templates', label: 'Templates', icon: FileText },
   { to: '/channels', label: 'Channels', icon: Share2 },
   { to: '/settings', label: 'Settings', icon: Settings },

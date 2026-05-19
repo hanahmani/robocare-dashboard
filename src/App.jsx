@@ -8,6 +8,7 @@ import ChannelsPage from './pages/ChannelsPage'
 import SettingsPage from './pages/SettingsPage'
 import SendPage from './pages/SendPage'
 import SendNotificationPage from './pages/SendWhatsappPage'
+import RecipientsPage from './pages/RecipientsPage'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="send-whatsapp" element={<SendNotificationPage />} />
         <Route path="inbox" element={<InboxPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="recipients" element={<RecipientsPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="channels" element={<ChannelsPage />} />
         <Route path="settings" element={<SettingsPage />} />
