@@ -3,14 +3,14 @@ import { useState, useEffect } from 'react'
 export function useDarkMode() {
   const [dark, setDark] = useState(() => {
     try {
-      const saved = localStorage.getItem('robocare-dark-mode')
-      if (saved !== null) return JSON.parse(saved)
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
+      const saved = localStorage.getItem('robocare.theme')
+      if (saved !== null) return saved === 'dark'
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
     } catch { return false }
   })
 
   useEffect(() => {
-    try { localStorage.setItem('robocare-dark-mode', JSON.stringify(dark)) } catch {}
+    try { localStorage.setItem('robocare.theme', dark ? 'dark' : 'light') } catch {}
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
 

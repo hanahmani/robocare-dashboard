@@ -373,3 +373,68 @@
     height: 240px;
   }
 }
+
+/* Dark mode overrides for dashboard (scoped) */
+:global(.dark) .dashboardPage {
+  background: transparent;
+}
+
+:global(.dark) .panelCard,
+:global(.dark) .metricCard,
+:global(.dark) .healthCard {
+  background: #071127 !important;
+  border-color: #111827 !important;
+}
+
+:global(.dark) .metricCard {
+  background: #071127 !important;
+}
+
+:global(.dark) .smartKpiCard {
+  border: 1px solid #172033 !important;
+  background: linear-gradient(180deg, #071127 0%, #061025 100%) !important;
+}
+
+:global(.dark) .kpiValue,
+:global(.dark) .sectionTitle,
+:global(.dark) .panelHeading {
+  color: #e6eef8 !important;
+}
+
+:global(.dark) .sectionMeta,
+:global(.dark) .kpiMeta,
+:global(.dark) .insightList,
+:global(.dark) .performanceRow,
+:global(.dark) .recipientSecondary,
+:global(.dark) .healthMeta {
+  color: #94a3b8 !important;
+}
+
+:global(.dark) .insightPanel {
+  background: #071127 !important;
+  border-color: #0f1724 !important;
+}
+
+:global(.dark) .insightItem {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .recentTable :global(.ant-table-thead > tr > th) {
+  background: #071127 !important;
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .recipientPrimary,
+:global(.dark) .healthLabel {
+  color: #e2e8f0 !important;
+}
+
+:global(.dark) .criticalCard {
+  background: #2b0b0b !important;
+  border-color: #4a0f0f !important;
+}
+
+:global(.dark) .criticalItem {
+  background: rgba(255,255,255,0.02) !important;
+  border-color: #4a0f0f !important;
+}

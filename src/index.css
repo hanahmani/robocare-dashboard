@@ -27,6 +27,24 @@ html.dark body {
   color: #e2e8f0;
 }
 
+/* Dark-mode overrides for common utility classes (helps when components use explicit bg/text classes)
+   These are minimal and additive; prefer using Tailwind `dark:` utilities for long-term fixes. */
+.dark .bg-white { background-color: #0b1220 !important; }
+.dark .bg-gray-50 { background-color: #071127 !important; }
+.dark .bg-gray-100 { background-color: #0f1724 !important; }
+.dark .border-gray-200 { border-color: #1f2937 !important; }
+.dark .border-gray-100 { border-color: #111827 !important; }
+.dark .text-gray-900 { color: #e2e8f0 !important; }
+.dark .text-gray-800 { color: #d1d5db !important; }
+.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-gray-600 { color: #9ca3af !important; }
+.dark .text-gray-500 { color: #94a3b8 !important; }
+.dark .text-gray-400 { color: #64748b !important; }
+.dark .bg-amber-50 { background-color: #2b2a16 !important; }
+.dark .bg-red-50 { background-color: #2a0b0b !important; }
+.dark .bg-blue-50 { background-color: #071634 !important; }
+.dark .bg-green-50 { background-color: #081b14 !important; }
+
 /* Scrollbar customization */
 ::-webkit-scrollbar {
   width: 8px;

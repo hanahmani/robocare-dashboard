@@ -30,7 +30,25 @@ export default function ApiTestPage() {
       let parsedHeaders = {}
       try { parsedHeaders = JSON.parse(headers) } catch {}
       const opts = { method, headers: parsedHeaders }
-      if (method !== 'GET' && body) opts.body = body
+      if (method !== 'GET' && body) {
+        // If content-type is JSON, validate and normalize the body
+        const contentType = (parsedHeaders['Content-Type'] || parsedHeaders['content-type'] || '')
+        if (contentType.includes('application/json')) {
+          let parsedBody = null
+          try {
+            parsedBody = JSON.parse(body)
+          } catch (e) {
+            throw new Error('Request body is not valid JSON')
+          }
+          // Auto-normalize common shapes: ensure "to" is an array when backend expects arrays
+          if (parsedBody && typeof parsedBody.to === 'string') {
+            parsedBody.to = [parsedBody.to]
+          }
+          opts.body = JSON.stringify(parsedBody)
+        } else {
+          opts.body = body
+        }
+      }
       const res = await fetch(url, opts)
       const text = await res.text()
       const ms = Math.round(performance.now() - t0)

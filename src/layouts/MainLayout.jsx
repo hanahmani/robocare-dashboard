@@ -45,10 +45,7 @@ export default function MainLayout() {
     [role],
   )
 
-  useEffect(() => {
-    localStorage.setItem('robocare.theme', theme)
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-  }, [theme])
+  // Theme is handled by `useDarkMode` hook (persists to localStorage and toggles class)
 
   useEffect(() => {
     localStorage.setItem('robocare.role', role)
@@ -73,6 +70,25 @@ export default function MainLayout() {
       window.clearInterval(timer)
     }
   }, [])
+
+  const [showScheduled, setShowScheduled] = useState(false)
+  const [scheduledJobs, setScheduledJobs] = useState([])
+
+  const openScheduled = () => {
+    try {
+      const q = JSON.parse(localStorage.getItem('robocare.notificationSchedules') || '[]')
+      setScheduledJobs(Array.isArray(q) ? q : [])
+    } catch {
+      setScheduledJobs([])
+    }
+    setShowScheduled(true)
+  }
+
+  const clearScheduled = () => {
+    try { localStorage.removeItem('robocare.notificationSchedules') } catch {}
+    setScheduledJobs([])
+    setScheduledCount(0)
+  }
 
   const current = filteredNavItems.find(
     (n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)),
@@ -165,6 +181,7 @@ export default function MainLayout() {
             <button
               className={`p-2 rounded-lg transition-colors relative ${theme === 'dark' ? 'hover:bg-slate-900 text-slate-300' : 'hover:bg-gray-100 text-gray-600'}`}
               aria-label="Notifications"
+              onClick={openScheduled}
             >
               <Bell className="w-5 h-5" strokeWidth={1.5} />
               {scheduledCount > 0 && (
@@ -184,6 +201,39 @@ export default function MainLayout() {
           <Outlet />
         </main>
       </div>
+
+      {showScheduled && (
+        <div className="fixed inset-0 z-50 flex items-center justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowScheduled(false)} />
+          <div className={`relative w-full max-w-md h-full ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-gray-200'} border-l p-4 overflow-auto`}> 
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold">Scheduled notifications ({scheduledJobs.length})</h3>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowScheduled(false)} className="px-3 py-1 text-sm rounded bg-gray-100 hover:bg-gray-200">Close</button>
+                <button onClick={clearScheduled} className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700">Clear all</button>
+              </div>
+            </div>
+
+            {scheduledJobs.length === 0 ? (
+              <div className="text-sm text-gray-500">No scheduled notifications.</div>
+            ) : (
+              <ul className="space-y-3">
+                {scheduledJobs.map((job, i) => (
+                  <li key={i} className="p-3 rounded-lg border border-gray-100 bg-gray-50"> 
+                    <div className="text-sm font-medium text-gray-900">{Array.isArray(job.to) ? job.to.join(', ') : job.to || JSON.stringify(job)}</div>
+                    <div className="text-xs text-gray-500">{job.when || job.at || job.schedule || job.cron || ''}</div>
+                    <pre className="mt-2 text-xs text-gray-600 bg-white p-2 rounded max-h-28 overflow-auto">{JSON.stringify(job, null, 2)}</pre>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
+
+// Scheduled drawer markup appended at end to avoid complex rework
+/* eslint-disable react/jsx-no-useless-fragment */
