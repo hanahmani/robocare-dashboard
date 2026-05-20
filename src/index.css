@@ -7,10 +7,24 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
   background-color: #ffffff;
   color: #111827;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+html.dark body {
+  background-color: #020617;
+  color: #e2e8f0;
 }
 
 /* Scrollbar customization */

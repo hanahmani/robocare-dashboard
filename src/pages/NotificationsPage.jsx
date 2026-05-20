@@ -1,13 +1,23 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MoreVertical, Search, Download, Plus, X, ChevronRight } from 'lucide-react'
+import { ReloadOutlined } from '@ant-design/icons'
+import { Alert, message as antMessage } from 'antd'
 import Card from '../components/Card'
 import { Avatar, ChannelTag, StatusBadge } from '../components/Badges'
-import { getSentNotifications, normalizeNotification } from '../services/notificationService'
+import {
+  getSentNotifications,
+  normalizeNotification,
+  sendEmailNotification,
+  sendSmsNotification,
+  sendWhatsAppNotification,
+} from '../services/notificationService'
 import SendNotificationPage from './SendWhatsappPage'
 
 const CHANNELS = ['Email', 'WhatsApp', 'SMS']
 const STATUSES = ['Sent', 'Failed', 'Partial', 'Pending']
+const DATE_RANGES = ['All time', 'Today', 'Last 7 days', 'Last 30 days']
+const FAILURE_ALERT_THRESHOLD = 15
 
 function Modal({ title, onClose, children }) {
   return (
@@ -68,6 +78,104 @@ function getMessagePreview(notification) {
     preview: preview || message,
     remaining: compactMessage !== preview,
   }
+}
+
+function normalizeQuery(query) {
+  return String(query || '').toLowerCase().trim().replace(/\s+/g, ' ')
+}
+
+function getRangeBounds(label) {
+  const now = Date.now()
+  if (label === 'Today') return now - 24 * 60 * 60 * 1000
+  if (label === 'Last 7 days') return now - 7 * 24 * 60 * 60 * 1000
+  if (label === 'Last 30 days') return now - 30 * 24 * 60 * 60 * 1000
+  return null
+}
+
+function parseSmartQuery(query) {
+  const normalized = normalizeQuery(query)
+  const tokens = normalized.split(' ').filter(Boolean)
+  const statusMap = { failed: 'Failed', sent: 'Sent', pending: 'Pending', partial: 'Partial' }
+  const channelMap = { email: 'Email', whatsapp: 'WhatsApp', sms: 'SMS' }
+
+  let inferredStatus = 'All'
+  let inferredChannel = 'All'
+  let inferredRange = 'All time'
+
+  const remaining = []
+
+  tokens.forEach((token) => {
+    if (statusMap[token]) {
+      inferredStatus = statusMap[token]
+      return
+    }
+    if (channelMap[token]) {
+      inferredChannel = channelMap[token]
+      return
+    }
+    if (token === 'today') {
+      inferredRange = 'Today'
+      return
+    }
+    if (token === 'yesterday' || token === 'week' || token === 'weekly') {
+      inferredRange = 'Last 7 days'
+      return
+    }
+    if (token === 'month' || token === 'monthly') {
+      inferredRange = 'Last 30 days'
+      return
+    }
+    remaining.push(token)
+  })
+
+  return {
+    inferredStatus,
+    inferredChannel,
+    inferredRange,
+    text: remaining.join(' '),
+  }
+}
+
+function getRecipients(notification) {
+  const rawRecipients = notification.raw?.to ?? notification.raw?.recipient ?? notification.recipient
+  if (Array.isArray(rawRecipients)) {
+    return rawRecipients.map((value) => String(value).trim()).filter(Boolean)
+  }
+  return String(rawRecipients || '')
+    .split(/[,;\n]/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+function getRetryPayload(notification, nextChannel) {
+  const recipients = getRecipients(notification)
+  const message = notification.raw?.message || notification.fullMessage || notification.message || notification.bodyText || notification.subject || ''
+  const subject = notification.raw?.subject || notification.subject || 'Retry notification'
+  const base = {
+    to: recipients,
+    message,
+  }
+
+  if (nextChannel === 'Email') {
+    return {
+      ...base,
+      subject,
+    }
+  }
+
+  if (nextChannel === 'WhatsApp') {
+    return {
+      ...base,
+      type: notification.raw?.type || 'TEMPLATE',
+      templateName: notification.raw?.templateName || notification.templateName || '',
+      templateLang: notification.raw?.templateLang || notification.templateLang || 'en_US',
+      headerText: notification.raw?.headerText || notification.headerText || '',
+      bodyText: notification.raw?.bodyText || notification.bodyText || '',
+      fileUrl: notification.raw?.fileUrl || notification.fileUrl || '',
+    }
+  }
+
+  return base
 }
 
 function NotificationMessagePreview({ notification, onOpenDetails }) {
@@ -133,14 +241,21 @@ export default function NotificationsPage() {
   const [search, setSearch] = useState('')
   const [channelFilter, setChannelFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [dateRangeFilter, setDateRangeFilter] = useState('All time')
+  const [recipientFilter, setRecipientFilter] = useState('')
   const [sortOrder, setSortOrder] = useState('recent')
   const [actionMenu, setActionMenu] = useState(null)
   const [selectedNotification, setSelectedNotification] = useState(null)
   const [showSendDrawer, setShowSendDrawer] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [retryTargetChannel, setRetryTargetChannel] = useState('')
+  const [retryingId, setRetryingId] = useState(null)
+  const [loading, setLoading] = useState(true)
   const rowRefs = useRef(new Map())
   const focusId = searchParams.get('focus') || ''
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
+    setLoading(true)
     let cancelled = false
     async function load() {
       try {
@@ -149,19 +264,60 @@ export default function NotificationsPage() {
         if (!cancelled) setData(list || [])
       } catch (err) {
         console.error('Failed to load sent notifications', err)
+        antMessage.error('Failed to refresh notification history')
+      } finally {
+        if (!cancelled) setLoading(false)
       }
     }
     load()
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    const cancel = loadData()
+    return () => {
+      if (typeof cancel === 'function') cancel()
+    }
+  }, [loadData])
+
+  useEffect(() => {
+    if (!autoRefresh) return undefined
+    const timer = window.setInterval(() => {
+      loadData()
+    }, 30000)
+    return () => window.clearInterval(timer)
+  }, [autoRefresh, loadData])
+
   const filtered = useMemo(() => {
+    const smart = parseSmartQuery(search)
+    const activeChannel = channelFilter !== 'All' ? channelFilter : smart.inferredChannel
+    const activeStatus = statusFilter !== 'All' ? statusFilter : smart.inferredStatus
+    const activeRange = dateRangeFilter !== 'All time' ? dateRangeFilter : smart.inferredRange
+    const textQuery = normalizeQuery(`${smart.text} ${recipientFilter}`)
+    const lowerBound = getRangeBounds(activeRange)
+
     const list = data.filter((n) => {
-      if (channelFilter !== 'All' && String(n.channel).toLowerCase() !== channelFilter.toLowerCase()) return false
-      if (statusFilter !== 'All' && String(n.status).toLowerCase() !== statusFilter.toLowerCase()) return false
-      if (search) {
-        const q = search.toLowerCase()
-        if (!String(n.recipient || '').toLowerCase().includes(q) && !String(n.id || '').toLowerCase().includes(q)) return false
+      const timestamp = new Date(n.raw?.sentAt || n.raw?.createdAt || 0).getTime()
+      if (lowerBound && Number.isFinite(timestamp) && timestamp < lowerBound) return false
+      if (activeChannel !== 'All' && String(n.channel).toLowerCase() !== activeChannel.toLowerCase()) return false
+      if (activeStatus !== 'All' && String(n.status).toLowerCase() !== activeStatus.toLowerCase()) return false
+      if (textQuery) {
+        const haystack = [
+          n.recipient,
+          n.id,
+          n.subject,
+          n.message,
+          n.fullMessage,
+          n.templateName,
+          n.templateLang,
+          n.errorMessage,
+          n.channel,
+          n.status,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(textQuery)) return false
       }
       return true
     })
@@ -170,7 +326,56 @@ export default function NotificationsPage() {
       const right = new Date(b.raw?.sentAt || b.raw?.createdAt || 0).getTime()
       return sortOrder === 'recent' ? right - left : left - right
     })
-  }, [data, search, channelFilter, statusFilter, sortOrder])
+  }, [data, search, channelFilter, statusFilter, sortOrder, dateRangeFilter, recipientFilter])
+
+  const failedCount = useMemo(() => filtered.filter((item) => String(item.status).toLowerCase() === 'failed').length, [filtered])
+  const failureRate = useMemo(() => (filtered.length > 0 ? (failedCount / filtered.length) * 100 : 0), [failedCount, filtered.length])
+
+  async function retryNotification(notification, nextChannel = notification.channel) {
+    setRetryingId(notification.id)
+    try {
+      const payload = getRetryPayload(notification, nextChannel)
+      if (nextChannel === 'Email') {
+        await sendEmailNotification(payload)
+      } else if (nextChannel === 'WhatsApp') {
+        await sendWhatsAppNotification(payload)
+      } else {
+        await sendSmsNotification(payload)
+      }
+
+      antMessage.success(`Retried notification #${notification.id} as ${nextChannel}`)
+      setSelectedNotification(null)
+      setActionMenu(null)
+      setRetryTargetChannel('')
+      loadData()
+    } catch (err) {
+      antMessage.error(err?.message || 'Retry failed')
+    } finally {
+      setRetryingId(null)
+    }
+  }
+
+  async function retryAllFailed() {
+    const items = filtered.filter((item) => String(item.status).toLowerCase() === 'failed')
+    if (items.length === 0) {
+      antMessage.info('No failed notifications in the current filter.')
+      return
+    }
+
+    setRetryingId('bulk')
+    try {
+      for (const item of items) {
+        // Retry each item using its original channel to preserve behavior.
+        // Users can change the channel in the details drawer before retrying a single item.
+        // eslint-disable-next-line no-await-in-loop
+        await retryNotification(item, item.channel)
+      }
+      antMessage.success(`Retried ${items.length} failed notification${items.length > 1 ? 's' : ''}.`)
+      loadData()
+    } finally {
+      setRetryingId(null)
+    }
+  }
 
   useEffect(() => {
     if (!focusId) return
@@ -206,10 +411,20 @@ export default function NotificationsPage() {
 
   return (
     <div className="p-6">
+      {failureRate >= FAILURE_ALERT_THRESHOLD && (
+        <Alert
+          className="mb-4"
+          type="warning"
+          showIcon
+          message="High failure rate detected"
+          description={`The current filtered result set is at ${failureRate.toFixed(1)}% failures. Retry the failed items or narrow the filters to inspect the root cause.`}
+        />
+      )}
+
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
+      <div className="flex items-start justify-between mb-5 gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative w-72">
+          <div className="relative w-80">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
               strokeWidth={1.75}
@@ -218,7 +433,7 @@ export default function NotificationsPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search notifications..."
+              placeholder="Search notifications... try: failed whatsapp yesterday"
               className="w-full pl-9 pr-8 py-1.5 text-sm bg-white border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 placeholder:text-gray-400"
             />
             {search && (
@@ -231,10 +446,18 @@ export default function NotificationsPage() {
             )}
           </div>
 
+          <input
+            type="text"
+            value={recipientFilter}
+            onChange={(e) => setRecipientFilter(e.target.value)}
+            placeholder="Filter recipient"
+            className={inputCls}
+          />
+
           <select
             value={channelFilter}
             onChange={(e) => setChannelFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-gray-700"
+            className={selectCls}
           >
             <option value="All">All Channels</option>
             {CHANNELS.map((c) => (
@@ -245,7 +468,7 @@ export default function NotificationsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-gray-700"
+            className={selectCls}
           >
             <option value="All">All Statuses</option>
             {STATUSES.map((s) => (
@@ -254,22 +477,54 @@ export default function NotificationsPage() {
           </select>
 
           <select
+            value={dateRangeFilter}
+            onChange={(e) => setDateRangeFilter(e.target.value)}
+            className={selectCls}
+          >
+            {DATE_RANGES.map((range) => (
+              <option key={range}>{range}</option>
+            ))}
+          </select>
+
+          <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-gray-700"
+            className={selectCls}
           >
             <option value="recent">Most recent</option>
             <option value="oldest">Oldest</option>
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <button
+            onClick={() => setAutoRefresh((value) => !value)}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border ${
+              autoRefresh ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-gray-200 text-gray-700'
+            }`}
+          >
+            Live {autoRefresh ? 'on' : 'off'}
+          </button>
+          <button
+            onClick={loadData}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-md hover:bg-gray-50 text-gray-700"
+          >
+            <ReloadOutlined spin={loading} />
+            Refresh
+          </button>
           <button
             onClick={handleExport}
             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-md hover:bg-gray-50 text-gray-700"
           >
             <Download className="w-3.5 h-3.5" strokeWidth={1.75} />
             Export
+          </button>
+          <button
+            onClick={retryAllFailed}
+            disabled={retryingId === 'bulk'}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 text-amber-700 disabled:opacity-60"
+          >
+            Retry all failed
           </button>
           <button
             onClick={() => setShowSendDrawer(true)}
@@ -279,6 +534,25 @@ export default function NotificationsPage() {
             New Notification
           </button>
         </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <Card className="bg-white">
+          <div className="text-[11px] uppercase tracking-wider text-gray-400">Visible rows</div>
+          <div className="mt-2 text-2xl font-semibold text-gray-900">{filtered.length}</div>
+        </Card>
+        <Card className="bg-white">
+          <div className="text-[11px] uppercase tracking-wider text-gray-400">Failed</div>
+          <div className="mt-2 text-2xl font-semibold text-red-600">{failedCount}</div>
+        </Card>
+        <Card className="bg-white">
+          <div className="text-[11px] uppercase tracking-wider text-gray-400">Failure rate</div>
+          <div className="mt-2 text-2xl font-semibold text-gray-900">{failureRate.toFixed(1)}%</div>
+        </Card>
+        <Card className="bg-white">
+          <div className="text-[11px] uppercase tracking-wider text-gray-400">Live updates</div>
+          <div className="mt-2 text-2xl font-semibold text-gray-900">{autoRefresh ? 'On' : 'Off'}</div>
+        </Card>
       </div>
 
       <Card padding="p-0">
@@ -344,6 +618,18 @@ export default function NotificationsPage() {
                     {actionMenu === n.id && (
                       <div className="absolute right-4 top-8 z-20 bg-white border border-gray-200 rounded-md shadow-lg min-w-[120px] py-1">
                         <button
+                          onClick={() => { openDetails(n); setActionMenu(null) }}
+                          className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          Details
+                        </button>
+                        <button
+                          onClick={() => { openDetails(n); setRetryTargetChannel(n.channel); setActionMenu(null) }}
+                          className="w-full text-left px-3 py-1.5 text-sm text-amber-700 hover:bg-amber-50"
+                        >
+                          Retry
+                        </button>
+                        <button
                           onClick={() => handleDelete(n.id)}
                           className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
                         >
@@ -401,6 +687,34 @@ export default function NotificationsPage() {
                 <span className="font-medium">Error:</span> {selectedNotification.errorMessage}
               </div>
             )}
+
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Retry notification</div>
+                  <div className="text-xs text-gray-500">Change the channel before resending if needed.</div>
+                </div>
+                <select
+                  value={retryTargetChannel || selectedNotification.channel}
+                  onChange={(e) => setRetryTargetChannel(e.target.value)}
+                  className={selectCls}
+                >
+                  {CHANNELS.map((channel) => (
+                    <option key={channel}>{channel}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => retryNotification(selectedNotification, retryTargetChannel || selectedNotification.channel)}
+                  disabled={retryingId === selectedNotification.id}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-md bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-60"
+                >
+                  {retryingId === selectedNotification.id ? 'Retrying...' : 'Retry now'}
+                </button>
+              </div>
+            </div>
           </div>
         </Modal>
       )}

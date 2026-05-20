@@ -72,6 +72,10 @@ const selectCls =
 
 const EMPTY_FORM = { name: '', channel: 'Email', language: 'FR', content: '', status: 'Active' }
 
+function extractVariables(text = '') {
+  return Array.from(new Set((text.match(/\{[a-zA-Z0-9_]+\}/g) || []).map((item) => item.slice(1, -1))))
+}
+
 export default function TemplatesPage() {
   const [data, setData] = useState(initialTemplates)
   const metaTemplates = getMetaWhatsAppTemplates()
@@ -81,6 +85,12 @@ export default function TemplatesPage() {
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [confirmDelete, setConfirmDelete] = useState(null)
+
+  const selectedTemplateVariables = useMemo(() => extractVariables(form.content), [form.content])
+  const selectedTemplatePreview = useMemo(() => {
+    if (!form.content) return 'Template preview will appear here.'
+    return form.content
+  }, [form.content])
 
   const filtered = useMemo(() => {
     return data.filter((t) => {
@@ -274,6 +284,15 @@ export default function TemplatesPage() {
               {t.content && (
                 <p className="text-xs text-gray-500 line-clamp-2 mt-1">{t.content}</p>
               )}
+              {extractVariables(t.content).length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {extractVariables(t.content).map((variable) => (
+                    <span key={`${t.id}-${variable}`} className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] border border-blue-100">
+                      {`{${variable}}`}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center justify-between mt-3">
                 <ChannelTag channel={t.channel} />
                 <span className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
@@ -363,6 +382,25 @@ export default function TemplatesPage() {
                 rows={4}
                 className={inputCls + ' resize-none'}
               />
+              <div className="mt-2 rounded-md border border-dashed border-gray-200 bg-gray-50 p-3 space-y-2">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="text-xs font-medium text-gray-700">Variable hints</div>
+                  <div className="text-[11px] text-gray-500">Use braces like {'{name}'} and {'{date}'}</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedTemplateVariables.length > 0 ? selectedTemplateVariables.map((variable) => (
+                    <span key={variable} className="px-2 py-0.5 rounded-full bg-white border border-gray-200 text-[11px] text-gray-700">
+                      {`{${variable}}`}
+                    </span>
+                  )) : (
+                    <span className="text-xs text-gray-500">No variables detected yet.</span>
+                  )}
+                </div>
+                <div className="rounded-md border border-gray-200 bg-white p-3 text-xs text-gray-600 whitespace-pre-line">
+                  <div className="font-medium text-gray-700 mb-1">Live preview</div>
+                  {selectedTemplatePreview}
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>

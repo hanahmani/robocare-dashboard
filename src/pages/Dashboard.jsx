@@ -15,12 +15,17 @@ import {
   Typography,
 } from 'antd'
 import {
+  ExclamationCircleOutlined,
+  LineChartOutlined,
+  PieChartOutlined,
+  ThunderboltOutlined,
   MailOutlined,
   MessageOutlined,
   ReloadOutlined,
   WhatsAppOutlined,
 } from '@ant-design/icons'
 import {
+  ArcElement,
   BarElement,
   CategoryScale,
   Chart as ChartJS,
@@ -31,15 +36,16 @@ import {
   PointElement,
   Tooltip,
 } from 'chart.js'
-import { Bar, Line } from 'react-chartjs-2'
+import { Bar, Doughnut, Line } from 'react-chartjs-2'
 import { fetchHealth, fetchSentNotifications, computeStats, buildVolumeByDay, buildVolumeByHour, normalizeNotification } from '../api/Notificationapi'
 import styles from './Dashboard.module.css'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend, Filler)
+ChartJS.register(CategoryScale, LinearScale, ArcElement, BarElement, LineElement, PointElement, Tooltip, Legend, Filler)
 
 const RANGE_OPTIONS = [
-  { value: '24h', label: 'Last 24 Hours' },
-  { value: '7d', label: 'Last 7 Days' },
+  { value: 'day', label: 'Today' },
+  { value: 'week', label: 'This Week' },
+  { value: 'month', label: 'This Month' },
   { value: 'all', label: 'All time' },
 ]
 
@@ -78,6 +84,8 @@ const STATUS_LABELS = {
 }
 
 const DAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
+const FAILURE_ALERT_THRESHOLD = 12
+const AUTO_REFRESH_MS = 30000
 
 export default function Dashboard() {
   const [allNotifications, setAllNotifications] = useState([])
@@ -85,14 +93,18 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [healthOnline, setHealthOnline] = useState(false)
-  const [rangeFilter, setRangeFilter] = useState('24h')
+  const [rangeFilter, setRangeFilter] = useState('day')
   const [channelFilter, setChannelFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [searchQuery, setSearchQuery] = useState('')
   const [volumeMode, setVolumeMode] = useState('24h')
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [responseTime, setResponseTime] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
   const hasLoadedRef = useRef(false)
 
   const loadData = useCallback(async ({ silent = false } = {}) => {
+    const startedAt = window.performance?.now?.() || Date.now()
     if (!silent) {
       if (!hasLoadedRef.current) {
         setLoading(true)
@@ -106,9 +118,12 @@ export default function Dashboard() {
       const rawNotifications = Array.isArray(notifications) ? notifications : []
       setAllNotifications(rawNotifications)
       setError('')
+      setLastUpdated(new Date())
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : 'Failed to load notifications')
     } finally {
+      const endedAt = window.performance?.now?.() || Date.now()
+      setResponseTime(Math.max(0, Math.round(endedAt - startedAt)))
       if (!silent) {
         hasLoadedRef.current = true
         setLoading(false)
@@ -132,11 +147,13 @@ export default function Dashboard() {
     checkHealth()
 
     const intervalId = window.setInterval(() => {
-      loadData({ silent: true })
-    }, 30000)
+      if (autoRefresh) {
+        loadData({ silent: true })
+      }
+    }, AUTO_REFRESH_MS)
 
     return () => window.clearInterval(intervalId)
-  }, [loadData])
+  }, [autoRefresh, loadData])
 
   const stats = useMemo(() => {
     const baseStats = computeStats(allNotifications)
@@ -147,10 +164,83 @@ export default function Dashboard() {
     }
   }, [allNotifications])
 
+  const todayMetrics = useMemo(() => {
+    const now = new Date()
+    const isSameDay = (value) => {
+      const date = new Date(value)
+      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+    }
+
+    const todayItems = allNotifications.filter((item) => isSameDay(item.sentAt || item.createdAt))
+    const todaySent = todayItems.filter((item) => item.status === 'SENT').length
+    const todayFailed = todayItems.filter((item) => item.status === 'FAILED').length
+    const topChannelEntry = ['EMAIL', 'SMS', 'WHATSAPP']
+      .map((channel) => ({
+        channel,
+        count: todayItems.filter((item) => item.type === channel).length,
+      }))
+      .sort((left, right) => right.count - left.count)[0] || { channel: 'EMAIL', count: 0 }
+
+    return {
+      total: todayItems.length,
+      successRate: todayItems.length > 0 ? Math.round((todaySent / todayItems.length) * 100) : 0,
+      failed: todayFailed,
+      topChannel: topChannelEntry,
+    }
+  }, [allNotifications])
+
+  const channelPieData = useMemo(() => ({
+    labels: ['Email', 'SMS', 'WhatsApp'],
+    datasets: [
+      {
+        data: ['EMAIL', 'SMS', 'WHATSAPP'].map((channel) => stats.byType?.[channel] || 0),
+        backgroundColor: [CHANNEL_COLORS.EMAIL, CHANNEL_COLORS.SMS, CHANNEL_COLORS.WHATSAPP],
+        borderWidth: 0,
+        hoverOffset: 6,
+      },
+    ],
+  }), [stats.byType])
+
+  const channelPieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' },
+    },
+  }
+
+  const insights = useMemo(() => {
+    const failureRate = stats.total > 0 ? (stats.failed / stats.total) * 100 : 0
+    const mostUsedChannel = ['EMAIL', 'SMS', 'WHATSAPP']
+      .map((channel) => ({ channel, count: stats.byType?.[channel] || 0 }))
+      .sort((left, right) => right.count - left.count)[0]
+
+    const channelLabel = mostUsedChannel?.channel === 'WHATSAPP' ? 'WhatsApp' : mostUsedChannel?.channel === 'SMS' ? 'SMS' : 'Email'
+
+    return [
+      failureRate >= FAILURE_ALERT_THRESHOLD
+        ? `High failure rate detected (${failureRate.toFixed(1)}%). Review the latest critical errors and retry queue.`
+        : `Failure rate is under control at ${failureRate.toFixed(1)}%.`,
+      mostUsedChannel
+        ? `Most used channel is ${channelLabel} with ${mostUsedChannel.count} notification${mostUsedChannel.count === 1 ? '' : 's'}.`
+        : 'No channel activity yet. Send a notification to activate live insights.',
+      todayMetrics.topChannel.count > 0
+        ? `Today, ${todayMetrics.topChannel.channel === 'WHATSAPP' ? 'WhatsApp' : todayMetrics.topChannel.channel === 'SMS' ? 'SMS' : 'Email'} leads the traffic.`
+        : 'No traffic recorded today. The dashboard will adapt once new events arrive.',
+    ]
+  }, [stats.byType, stats.failed, stats.total, todayMetrics.topChannel])
+
   const filteredNotifications = useMemo(() => {
     const search = searchQuery.trim().toLowerCase()
     const now = Date.now()
-    const rangeMs = rangeFilter === '24h' ? 24 * 60 * 60 * 1000 : rangeFilter === '7d' ? 7 * 24 * 60 * 60 * 1000 : null
+    const rangeMs =
+      rangeFilter === 'day'
+        ? 24 * 60 * 60 * 1000
+        : rangeFilter === 'week'
+          ? 7 * 24 * 60 * 60 * 1000
+          : rangeFilter === 'month'
+            ? 30 * 24 * 60 * 60 * 1000
+            : null
     const lowerBound = rangeMs ? now - rangeMs : null
 
     return allNotifications
@@ -259,6 +349,15 @@ export default function Dashboard() {
     },
   }
 
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { position: 'bottom' },
+    },
+  }
+
   const groupedBarOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -273,6 +372,7 @@ export default function Dashboard() {
 
   const total = allNotifications.length || 1
   const channelCounts = stats.byType || { EMAIL: 0, SMS: 0, WHATSAPP: 0 }
+  const failureRate = stats.total > 0 ? (stats.failed / stats.total) * 100 : 0
 
   if (loading) {
     return (
@@ -285,6 +385,111 @@ export default function Dashboard() {
   return (
     <div className={styles.dashboardPage}>
       {error ? <Alert className={styles.errorBanner} type="error" showIcon message="Unable to refresh notifications" description={error} /> : null}
+
+      <Card className={styles.panelCard}>
+        <div className={styles.insightHeader}>
+          <div>
+            <div className={styles.sectionEyebrow}>Smart overview</div>
+            <div className={styles.sectionTitle}>Operational pulse for the notification platform</div>
+            <div className={styles.sectionMeta}>
+              Live updates, performance checks, and actionable guidance for the support team.
+            </div>
+          </div>
+          <div className={styles.smartActions}>
+            <Button
+              icon={<ReloadOutlined spin={refreshing} />}
+              onClick={() => loadData()}
+              size="large"
+            >
+              Refresh
+            </Button>
+            <Button
+              type={autoRefresh ? 'primary' : 'default'}
+              icon={<ThunderboltOutlined />}
+              onClick={() => setAutoRefresh((value) => !value)}
+              size="large"
+            >
+              {autoRefresh ? 'Live refresh on' : 'Live refresh off'}
+            </Button>
+          </div>
+        </div>
+
+        <div className={styles.smartKpis}>
+          <div className={styles.smartKpiCard}>
+            <div className={styles.kpiLabel}>Today total</div>
+            <div className={styles.kpiValue}>{todayMetrics.total}</div>
+            <div className={styles.kpiMeta}>Notifications sent today</div>
+          </div>
+          <div className={styles.smartKpiCard}>
+            <div className={styles.kpiLabel}>Success rate</div>
+            <div className={styles.kpiValue}>{todayMetrics.successRate}%</div>
+            <div className={styles.kpiMeta}>Same-day delivery performance</div>
+          </div>
+          <div className={`${styles.smartKpiCard} ${failureRate >= FAILURE_ALERT_THRESHOLD ? styles.kpiDanger : ''}`}>
+            <div className={styles.kpiLabel}>Failed notifications</div>
+            <div className={styles.kpiValue}>{todayMetrics.failed}</div>
+            <div className={styles.kpiMeta}>Failure rate {failureRate.toFixed(1)}%</div>
+          </div>
+          <div className={styles.smartKpiCard}>
+            <div className={styles.kpiLabel}>Most used channel</div>
+            <div className={styles.kpiValue}>
+              {todayMetrics.topChannel.channel === 'WHATSAPP' ? 'WhatsApp' : todayMetrics.topChannel.channel === 'SMS' ? 'SMS' : 'Email'}
+            </div>
+            <div className={styles.kpiMeta}>{todayMetrics.topChannel.count} message(s) today</div>
+          </div>
+        </div>
+
+        <div className={styles.insightGrid}>
+          <div className={styles.insightPanel}>
+            <div className={styles.panelHeading}>
+              <LineChartOutlined />
+              Insights panel
+            </div>
+            <ul className={styles.insightList}>
+              {insights.map((insight) => (
+                <li key={insight} className={styles.insightItem}>
+                  {insight}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className={styles.insightPanel}>
+            <div className={styles.panelHeading}>
+              <PieChartOutlined />
+              Channel distribution
+            </div>
+            <div className={styles.chartBoxSmall}>
+              <Doughnut data={channelPieData} options={doughnutOptions} />
+            </div>
+          </div>
+
+          <div className={styles.insightPanel}>
+            <div className={styles.panelHeading}>
+              <ExclamationCircleOutlined />
+              Performance panel
+            </div>
+            <div className={styles.performanceList}>
+              <div className={styles.performanceRow}>
+                <span>API status</span>
+                <Badge status={healthOnline ? 'success' : 'error'} text={healthOnline ? 'Online' : 'Offline'} />
+              </div>
+              <div className={styles.performanceRow}>
+                <span>Response time</span>
+                <strong>{responseTime === null ? '—' : `${responseTime} ms`}</strong>
+              </div>
+              <div className={styles.performanceRow}>
+                <span>Last refresh</span>
+                <strong>{lastUpdated ? lastUpdated.toLocaleTimeString('fr-FR') : '—'}</strong>
+              </div>
+              <div className={styles.performanceRow}>
+                <span>Tracked recipients</span>
+                <strong>{stats.unique}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <div className={styles.filterBar}>
         <Select

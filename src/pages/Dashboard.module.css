@@ -82,6 +82,139 @@
   border: 1px solid #f0f0f0;
 }
 
+.insightHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.sectionEyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #185fa5;
+  margin-bottom: 6px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.sectionMeta {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  max-width: 64ch;
+}
+
+.smartActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.smartKpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.smartKpiCard {
+  border: 1px solid #e5eef8;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  padding: 16px;
+}
+
+.kpiDanger {
+  border-color: #f5b2b2;
+  background: linear-gradient(180deg, #fff8f8 0%, #fff1f1 100%);
+}
+
+.kpiLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.kpiValue {
+  font-size: 30px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1;
+}
+
+.kpiMeta {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.insightGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.insightPanel {
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+  padding: 16px;
+  background: #fff;
+  min-width: 0;
+}
+
+.panelHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #111827;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.insightList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.insightItem {
+  color: #374151;
+}
+
+.performanceList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.performanceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #374151;
+}
+
 .toggleGroup {
   display: inline-flex;
   gap: 8px;
