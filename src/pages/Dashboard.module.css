@@ -1,8 +1,25 @@
 .dashboardPage {
-  padding: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  position: relative;
+}
+
+.dashboardPage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(480px 220px at 0% 0%, rgba(24, 95, 165, 0.08), transparent 70%),
+    radial-gradient(420px 220px at 100% 100%, rgba(29, 158, 117, 0.06), transparent 70%);
+  z-index: 0;
+}
+
+.dashboardPage > * {
+  position: relative;
+  z-index: 1;
 }
 
 .loadingState {
@@ -13,7 +30,8 @@
 }
 
 .errorBanner {
-  border-radius: 8px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.06);
 }
 
 .filterBar {
@@ -21,6 +39,12 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+  border: 1px solid #e6eef8;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.04);
 }
 
 .filterSelect {
@@ -39,33 +63,41 @@
 
 .metricGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }
 
 .metricCard {
-  border-radius: 8px;
-  border: 1px solid #f0f0f0;
-  background: #fafafa;
+  border-radius: 16px;
+  border: 1px solid #e6eef8;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.04);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(17, 24, 39, 0.08);
 }
 
 .metricCard :global(.ant-card-body) {
-  background: #fafafa;
+  background: transparent;
 }
 
 .metricLabel {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #8c8c8c;
+  letter-spacing: 0.1em;
+  color: #64748b;
   margin-bottom: 8px;
+  font-weight: 700;
 }
 
 .contentGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
+  gap: 14px;
   align-items: start;
 }
 
@@ -73,13 +105,20 @@
 .rightColumn {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
 .panelCard {
-  border-radius: 8px;
-  border: 1px solid #f0f0f0;
+  border-radius: 16px;
+  border: 1px solid #e6eef8;
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 26px rgba(17, 24, 39, 0.05);
+}
+
+.panelCard :global(.ant-card-head) {
+  border-bottom: 1px solid #edf2f7;
 }
 
 .insightHeader {
@@ -91,26 +130,27 @@
 }
 
 .sectionEyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #185fa5;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .sectionTitle {
-  font-size: 20px;
-  font-weight: 700;
-  color: #111827;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
   line-height: 1.2;
+  max-width: 30ch;
 }
 
 .sectionMeta {
-  margin-top: 6px;
-  color: #6b7280;
+  margin-top: 8px;
+  color: #64748b;
   font-size: 13px;
-  max-width: 64ch;
+  max-width: 68ch;
 }
 
 .smartActions {
@@ -129,23 +169,36 @@
 }
 
 .smartKpiCard {
-  border: 1px solid #e5eef8;
-  border-radius: 14px;
+  border: 1px solid #e3eefb;
+  border-radius: 16px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.smartKpiCard::after {
+  content: '';
+  position: absolute;
+  right: -24px;
+  top: -24px;
+  width: 92px;
+  height: 92px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, rgba(24, 95, 165, 0.16), transparent 70%);
 }
 
 .kpiDanger {
-  border-color: #f5b2b2;
+  border-color: #f6c1c1;
   background: linear-gradient(180deg, #fff8f8 0%, #fff1f1 100%);
 }
 
 .kpiLabel {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #6b7280;
+  letter-spacing: 0.1em;
+  color: #64748b;
   margin-bottom: 8px;
 }
 
@@ -158,7 +211,7 @@
 
 .kpiMeta {
   margin-top: 8px;
-  color: #6b7280;
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -169,11 +222,12 @@
 }
 
 .insightPanel {
-  border: 1px solid #edf2f7;
-  border-radius: 14px;
+  border: 1px solid #ebf1f8;
+  border-radius: 16px;
   padding: 16px;
   background: #fff;
   min-width: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .panelHeading {
@@ -191,13 +245,13 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  color: #374151;
+  color: #334155;
   font-size: 13px;
   line-height: 1.5;
 }
 
 .insightItem {
-  color: #374151;
+  color: #334155;
 }
 
 .performanceList {
@@ -212,7 +266,7 @@
   justify-content: space-between;
   gap: 12px;
   font-size: 13px;
-  color: #374151;
+  color: #334155;
 }
 
 .toggleGroup {
@@ -221,7 +275,7 @@
 }
 
 .chartBox {
-  height: 280px;
+  height: 300px;
 }
 
 .chartBoxSmall {
@@ -229,15 +283,24 @@
 }
 
 .viewAllLink {
-  font-weight: 600;
+  font-weight: 700;
+  color: #185fa5;
 }
 
 .recentTable :global(.ant-table) {
   background: transparent;
 }
 
+.recentTable :global(.ant-table-container) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
 .recentTable :global(.ant-table-thead > tr > th) {
-  background: #fafafa;
+  background: #f7faff;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
 }
 
 .recipientCell {
@@ -251,50 +314,55 @@
 }
 
 .recipientPrimary {
-  font-weight: 600;
+  font-weight: 700;
   color: #1f2937;
 }
 
 .recipientSecondary {
   font-size: 12px;
-  color: #8c8c8c;
+  color: #64748b;
 }
 
 .channelCell {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .channelList {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .channelRow {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 10px;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
 .channelHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
 }
 
 .criticalCard {
-  background: #fcebeb;
-  border-color: #f7c1c1;
+  background: linear-gradient(180deg, #fff6f6 0%, #fff0f0 100%);
+  border-color: #f6c1c1;
 }
 
 .criticalCard :global(.ant-card-body),
 .criticalCard :global(.ant-card-head) {
-  background: #fcebeb;
+  background: transparent;
 }
 
 .criticalList {
@@ -304,9 +372,9 @@
 }
 
 .criticalItem {
-  border-radius: 8px;
-  border: 1px solid #f7c1c1;
-  background: rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  border: 1px solid #f7caca;
+  background: rgba(255, 255, 255, 0.7);
   padding: 12px;
 }
 
@@ -330,9 +398,10 @@
 }
 
 .healthCard {
-  border-radius: 8px;
-  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  border: 1px solid #e6eef8;
   margin-top: auto;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
 }
 
 .healthRow {
@@ -342,12 +411,12 @@
 }
 
 .healthLabel {
-  font-weight: 600;
+  font-weight: 700;
   color: #1f2937;
 }
 
 .healthMeta {
-  color: #8c8c8c;
+  color: #64748b;
   font-size: 12px;
 }
 
@@ -355,11 +424,27 @@
   .contentGrid {
     grid-template-columns: 1fr;
   }
+
+  .insightGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .insightHeader {
+    flex-direction: column;
+  }
+
+  .smartActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
   .dashboardPage {
     padding: 8px;
+    gap: 10px;
   }
 
   .filterSelect,
@@ -381,13 +466,10 @@
 
 :global(.dark) .panelCard,
 :global(.dark) .metricCard,
-:global(.dark) .healthCard {
-  background: #071127 !important;
+:global(.dark) .healthCard,
+:global(.dark) .filterBar {
+  background: rgba(7, 17, 39, 0.86) !important;
   border-color: #111827 !important;
-}
-
-:global(.dark) .metricCard {
-  background: #071127 !important;
 }
 
 :global(.dark) .smartKpiCard {
@@ -397,7 +479,9 @@
 
 :global(.dark) .kpiValue,
 :global(.dark) .sectionTitle,
-:global(.dark) .panelHeading {
+:global(.dark) .panelHeading,
+:global(.dark) .recipientPrimary,
+:global(.dark) .healthLabel {
   color: #e6eef8 !important;
 }
 
@@ -406,11 +490,13 @@
 :global(.dark) .insightList,
 :global(.dark) .performanceRow,
 :global(.dark) .recipientSecondary,
-:global(.dark) .healthMeta {
+:global(.dark) .healthMeta,
+:global(.dark) .channelHeader {
   color: #94a3b8 !important;
 }
 
-:global(.dark) .insightPanel {
+:global(.dark) .insightPanel,
+:global(.dark) .channelRow {
   background: #071127 !important;
   border-color: #0f1724 !important;
 }
@@ -424,17 +510,12 @@
   color: #cbd5e1 !important;
 }
 
-:global(.dark) .recipientPrimary,
-:global(.dark) .healthLabel {
-  color: #e2e8f0 !important;
-}
-
 :global(.dark) .criticalCard {
   background: #2b0b0b !important;
   border-color: #4a0f0f !important;
 }
 
 :global(.dark) .criticalItem {
-  background: rgba(255,255,255,0.02) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
   border-color: #4a0f0f !important;
 }

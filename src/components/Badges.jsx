@@ -14,17 +14,17 @@ export function StatusBadge({ status }) {
   }[String(status || '').toUpperCase()] || status
 
   const styleMap = {
-    Sent: { background: '#f0fdf4', color: '#52c41a', border: '1px solid #bbf7d0' },
-    Failed: { background: '#fff1f0', color: '#ff4d4f', border: '1px solid #ffccc7' },
-    Partial: { background: '#fff7ed', color: '#fa8c16', border: '1px solid #ffe7c2' },
-    Pending: { background: '#f8fafc', color: '#374151', border: '1px solid #e6edf3' },
-    Draft: { background: '#f3f4f6', color: '#6b7280', border: '1px solid #e5e7eb' },
+    Sent: { background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0' },
+    Failed: { background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca' },
+    Partial: { background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a' },
+    Pending: { background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0' },
+    Draft: { background: '#f3f4f6', color: '#4b5563', border: '1px solid #e5e7eb' },
   }
   const s = styleMap[normalized] || styleMap.Pending
   return (
     <span
       style={{ background: s.background, color: s.color, border: s.border }}
-      className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded`}
+      className="inline-flex items-center px-2.5 py-1 text-[11px] font-semibold rounded-full"
     >
       {normalized}
     </span>
@@ -47,9 +47,11 @@ export function ChannelTag({ channel }) {
   const meta = channelMeta[normalized] || channelMeta.Email
   const Icon = meta.icon
   return (
-    <span className={`inline-flex items-center gap-1.5 text-sm`}>
-      <Icon className="w-3.5 h-3.5" strokeWidth={1.75} style={{ color: meta.color }} />
-      <span className="text-gray-700">{normalized}</span>
+    <span className="inline-flex items-center gap-2 text-sm">
+      <span className="p-1 rounded-md" style={{ backgroundColor: `${meta.color}1A` }}>
+        <Icon className="w-3.5 h-3.5" strokeWidth={1.75} style={{ color: meta.color }} />
+      </span>
+      <span className="text-gray-700 font-medium">{normalized}</span>
     </span>
   )
 }
@@ -67,7 +69,7 @@ export function Avatar({ initials }) {
   const idx = (initials.charCodeAt(0) + initials.charCodeAt(1)) % palette.length
   return (
     <div
-      className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold ${palette[idx]}`}
+      className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold ${palette[idx]}`}
     >
       {initials}
     </div>

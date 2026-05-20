@@ -104,6 +104,8 @@ export default function SendWhatsappPage({ embedded = false }) {
     return selectedTemplate?.name || message
   }, [channel, subject, message, selectedTemplate?.name])
 
+  const rootClassName = embedded ? 'space-y-6' : 'page-shell px-4 sm:px-8 py-6 space-y-6'
+
   async function dispatchNotification({ targetChannel = channel, targetRecipients = parsedRecipients } = {}) {
     if (targetRecipients.length === 0) {
       throw new Error('Ajoutez au moins un destinataire.')
@@ -258,8 +260,26 @@ export default function SendWhatsappPage({ embedded = false }) {
   }
 
   return (
-    <div className={embedded ? 'space-y-6' : 'p-6 max-w-4xl mx-auto'}>
-      <Card>
+    <div className={rootClassName}>
+      {!embedded && (
+        <div className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-medical-50 p-6 shadow-card">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-700">Send center</p>
+              <h1 className="mt-2 text-3xl font-extrabold text-surface-900">Envoyer une notification</h1>
+              <p className="mt-2 max-w-2xl text-sm text-surface-500">
+                Choisissez un canal, préparez le contenu, puis envoyez ou programmez votre message avec une interface plus claire et plus cohérente.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-brand-100 bg-white/70 px-4 py-3 backdrop-blur-sm">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-surface-400">Current channel</div>
+              <div className="mt-1 text-lg font-bold text-surface-900">{channel}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Card className="overflow-hidden">
         <div className="space-y-6">
           {!embedded && (
             <div>
@@ -278,8 +298,8 @@ export default function SendWhatsappPage({ embedded = false }) {
                 onClick={() => setChannel(item)}
                 className={`px-4 py-2 rounded-md text-sm border transition-colors ${
                   channel === item
-                    ? 'bg-brand-600 text-white border-brand-600'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                    ? 'bg-brand-600 text-white border-brand-600 shadow-glow'
+                    : 'bg-white text-surface-600 border-surface-200 hover:bg-surface-50 hover:text-surface-900'
                 }`}
               >
                 {item}
@@ -296,7 +316,7 @@ export default function SendWhatsappPage({ embedded = false }) {
                 value={recipients}
                 onChange={(e) => setRecipients(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
                 placeholder="Un ou plusieurs numéros / emails, séparés par des virgules ou une ligne par destinataire"
               />
               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -305,7 +325,7 @@ export default function SendWhatsappPage({ embedded = false }) {
                   <select
                     value={recipientGroup}
                     onChange={(e) => setRecipientGroup(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full px-3 py-2 border border-surface-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   >
                     {recipientGroups.map((group) => (
                       <option key={group.id} value={group.id}>
@@ -320,14 +340,14 @@ export default function SendWhatsappPage({ embedded = false }) {
                     <button
                       type="button"
                       onClick={() => setSendMode('now')}
-                      className={`flex-1 px-3 py-2 rounded-md border text-sm ${sendMode === 'now' ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                      className={`flex-1 px-3 py-2 rounded-xl border text-sm ${sendMode === 'now' ? 'bg-brand-600 text-white border-brand-600 shadow-glow' : 'bg-white text-surface-600 border-surface-200'}`}
                     >
                       Send now
                     </button>
                     <button
                       type="button"
                       onClick={() => setSendMode('schedule')}
-                      className={`flex-1 px-3 py-2 rounded-md border text-sm ${sendMode === 'schedule' ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-700 border-gray-200'}`}
+                      className={`flex-1 px-3 py-2 rounded-xl border text-sm ${sendMode === 'schedule' ? 'bg-brand-600 text-white border-brand-600 shadow-glow' : 'bg-white text-surface-600 border-surface-200'}`}
                     >
                       Schedule
                     </button>
@@ -355,7 +375,7 @@ export default function SendWhatsappPage({ embedded = false }) {
                   <select
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+                    className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
                   >
                     {metaTemplates.map((template) => (
                       <option key={template.id} value={template.name}>
@@ -389,7 +409,7 @@ export default function SendWhatsappPage({ embedded = false }) {
                       <input
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+                        className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
                         placeholder="hana"
                       />
                     </div>
@@ -399,7 +419,7 @@ export default function SendWhatsappPage({ embedded = false }) {
                         value={landReportBodyText}
                         onChange={(e) => setLandReportBodyText(e.target.value)}
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+                        className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
                         placeholder="Your agricultural report for field A12 is ready. Soil humidity is 62%."
                       />
                     </div>
@@ -463,7 +483,7 @@ export default function SendWhatsappPage({ embedded = false }) {
                         <input
                           value={templateValues[field.key] || ''}
                           onChange={(e) => updateTemplateValue(field.key, e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+                          className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
                           placeholder={field.placeholder}
                         />
                       </div>
@@ -510,7 +530,7 @@ export default function SendWhatsappPage({ embedded = false }) {
                     type="date"
                     value={scheduleDate}
                     onChange={(e) => setScheduleDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+                    className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
                   />
                 </div>
                 <div>
@@ -525,7 +545,7 @@ export default function SendWhatsappPage({ embedded = false }) {
               </div>
             )}
 
-            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-4 space-y-3">
+            <div className="rounded-2xl border border-surface-200 bg-gradient-to-br from-white to-surface-50 p-4 space-y-3 shadow-card">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <div className="text-sm font-semibold text-gray-900">Live preview</div>
@@ -556,7 +576,7 @@ export default function SendWhatsappPage({ embedded = false }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-60 shadow-glow"
               >
                 {loading ? 'Envoi...' : `Envoyer via ${channel}`}
               </button>
@@ -568,11 +588,11 @@ export default function SendWhatsappPage({ embedded = false }) {
             </div>
 
             {scheduledJobs.length > 0 && (
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <div className="text-sm font-semibold text-gray-900 mb-2">Scheduled queue</div>
+              <div className="rounded-2xl border border-surface-200 bg-white p-4 shadow-card">
+                <div className="text-sm font-semibold text-surface-900 mb-2">Scheduled queue</div>
                 <div className="space-y-2 max-h-48 overflow-auto">
                   {scheduledJobs.map((job) => (
-                    <div key={job.id} className="flex items-center justify-between gap-3 rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                    <div key={job.id} className="flex items-center justify-between gap-3 rounded-xl border border-surface-100 bg-surface-50 px-3 py-2 text-xs text-surface-600">
                       <span>{job.channel} for {formatScheduleLabel(job.runAt)}</span>
                       <span>{Array.isArray(job.recipients) ? job.recipients.length : 0} recipients</span>
                     </div>

@@ -20,11 +20,15 @@ body {
   background-color: #ffffff;
   color: #111827;
   transition: background-color 180ms ease, color 180ms ease;
+  /* subtle layered background */
+  background-image: radial-gradient(circle at 10% 10%, rgba(59,130,246,0.06), transparent 12%), radial-gradient(circle at 90% 80%, rgba(139,92,246,0.04), transparent 18%), linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%);
+  background-attachment: fixed;
 }
 
 html.dark body {
   background-color: #020617;
   color: #e2e8f0;
+  background-image: none;
 }
 
 /* Dark-mode overrides for common utility classes (helps when components use explicit bg/text classes)
@@ -45,6 +49,51 @@ html.dark body {
 .dark .bg-blue-50 { background-color: #071634 !important; }
 .dark .bg-green-50 { background-color: #081b14 !important; }
 
+/* Brand palette dark-mode helpers */
+.dark .bg-brand-50 { background-color: #0f1f0d !important; }
+.dark .bg-brand-100 { background-color: #172713 !important; }
+.dark .bg-brand-200 { background-color: #20301a !important; }
+.dark .bg-medical-50 { background-color: #0f1f0d !important; }
+.dark .bg-medical-100 { background-color: #172713 !important; }
+.dark .bg-alert-50 { background-color: #2a0b0b !important; }
+.dark .bg-warning-50 { background-color: #2b2110 !important; }
+.dark .text-brand-900 { color: #ecfccb !important; }
+.dark .text-brand-800 { color: #dcfce7 !important; }
+.dark .text-brand-700 { color: #d9f99d !important; }
+.dark .text-brand-600 { color: #bef264 !important; }
+.dark .text-medical-700 { color: #86efac !important; }
+.dark .text-alert-600 { color: #fca5a5 !important; }
+.dark .text-warning-700 { color: #fde68a !important; }
+.dark .border-brand-100 { border-color: #172713 !important; }
+.dark .border-brand-200 { border-color: #20301a !important; }
+.dark .border-medical-100 { border-color: #172713 !important; }
+.dark .border-alert-100 { border-color: #4a0f0f !important; }
+.dark .border-warning-100 { border-color: #3f2f12 !important; }
+
+/* Dark-mode overrides for custom surface tokens used in new UI */
+.dark .bg-surface-50 { background-color: #020617 !important; }
+.dark .bg-surface-100 { background-color: #0b1220 !important; }
+.dark .bg-surface-200 { background-color: #1f2937 !important; }
+.dark .text-surface-900 { color: #e2e8f0 !important; }
+.dark .text-surface-800 { color: #cbd5e1 !important; }
+.dark .text-surface-700 { color: #cbd5e1 !important; }
+.dark .text-surface-600 { color: #94a3b8 !important; }
+.dark .text-surface-500 { color: #94a3b8 !important; }
+.dark .text-surface-400 { color: #64748b !important; }
+.dark .border-surface-200 { border-color: #1f2937 !important; }
+.dark .border-surface-100 { border-color: #111827 !important; }
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Scrollbar customization */
 ::-webkit-scrollbar {
   width: 8px;
@@ -60,3 +109,77 @@ html.dark body {
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Shared page shell so all routed pages keep the same spacing and width rhythm */
+.page-shell {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+/* Global visual unification for Ant Design cards/tables used across pages */
+.ant-card {
+  border-radius: 16px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.05) !important;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #eef2f7 !important;
+}
+
+.ant-table-wrapper .ant-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  font-weight: 700;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+/* Dark mode global alignment for Ant Design surfaces */
+.dark .ant-card,
+.dark .ant-table,
+.dark .ant-table-container {
+  background: #071127 !important;
+  border-color: #111827 !important;
+}
+
+.dark .ant-card-head,
+.dark .ant-table-thead > tr > th,
+.dark .ant-table-tbody > tr > td {
+  background: #071127 !important;
+  border-color: #111827 !important;
+  color: #cbd5e1 !important;
+}
+
+/* Decorative background blobs used by layouts */
+.decor-blobs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.decor-blobs .blob {
+  position: absolute;
+  filter: blur(60px);
+  opacity: 0.28;
+  transform: translate3d(0,0,0);
+}
+.blob.brand { background: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.85), rgba(59,130,246,0.45)); width: 420px; height: 420px; top: -80px; left: -120px; }
+.blob.purple { background: radial-gradient(circle at 70% 70%, rgba(139,92,246,0.85), rgba(139,92,246,0.35)); width: 360px; height: 360px; bottom: -120px; right: -80px; }
+
+/* Glass shadow helper for components that should float */
+.shadow-glass {
+  box-shadow: 0 10px 30px rgba(2,6,23,0.08), 0 2px 8px rgba(2,6,23,0.04);
+  border-radius: 1rem;
+}
+
+/* Slightly stronger card shadow used on hover */
+.shadow-card-hover { box-shadow: 0 12px 40px rgba(2,6,23,0.09); }
+
+/* Small utility to animate entrance from below */
+.animate-slide-up { animation: slideUp 420ms cubic-bezier(0.2,0.8,0.2,1) both; }
+
