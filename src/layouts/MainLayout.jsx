@@ -18,6 +18,8 @@ import {
   Terminal,
 } from 'lucide-react'
 import { useDarkMode } from '../hooks/useDarkMode'
+import { fetchReceivedWhatsApp } from '../api/Notificationapi'
+import { useToast } from '../components/ToastSystem'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -73,15 +75,26 @@ export default function MainLayout() {
 
   const [showScheduled, setShowScheduled] = useState(false)
   const [scheduledJobs, setScheduledJobs] = useState([])
+  const [receivedList, setReceivedList] = useState([])
 
   const openScheduled = () => {
-    try {
-      const q = JSON.parse(localStorage.getItem('robocare.notificationSchedules') || '[]')
-      setScheduledJobs(Array.isArray(q) ? q : [])
-    } catch {
-      setScheduledJobs([])
-    }
-    setShowScheduled(true)
+    (async () => {
+      try {
+        const q = JSON.parse(localStorage.getItem('robocare.notificationSchedules') || '[]')
+        setScheduledJobs(Array.isArray(q) ? q : [])
+      } catch {
+        setScheduledJobs([])
+      }
+
+      try {
+        const rec = await fetchReceivedWhatsApp()
+        setReceivedList(Array.isArray(rec) ? rec : [])
+      } catch {
+        setReceivedList([])
+      }
+
+      setShowScheduled(true)
+    })()
   }
 
   const clearScheduled = () => {
@@ -89,6 +102,31 @@ export default function MainLayout() {
     setScheduledJobs([])
     setScheduledCount(0)
   }
+
+  const toast = useToast()
+
+  useEffect(() => {
+    let prev = 0
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const rec = await fetchReceivedWhatsApp()
+        const list = Array.isArray(rec) ? rec : []
+        if (cancelled) return
+        if (list.length > prev) {
+          const diff = list.length - prev
+          try { toast(`${diff} new incoming message${diff > 1 ? 's' : ''}`, 'info') } catch {}
+        }
+        prev = list.length
+        setReceivedList(list)
+      } catch {
+        // ignore polling errors
+      }
+    }
+    poll()
+    const id = setInterval(poll, 15000)
+    return () => { cancelled = true; clearInterval(id) }
+  }, [toast])
 
   const current = filteredNavItems.find(
     (n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)),
@@ -184,10 +222,16 @@ export default function MainLayout() {
               onClick={openScheduled}
             >
               <Bell className="w-5 h-5" strokeWidth={1.5} />
-              {scheduledCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] leading-4 text-center">
-                  {scheduledCount}
+              {(receivedList.length > 0) ? (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-green-500 text-white text-[10px] leading-4 text-center">
+                  {receivedList.length}
                 </span>
+              ) : (
+                scheduledCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[10px] leading-4 text-center">
+                    {scheduledCount}
+                  </span>
+                )
               )}
             </button>
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-semibold">
@@ -214,19 +258,41 @@ export default function MainLayout() {
               </div>
             </div>
 
-            {scheduledJobs.length === 0 ? (
-              <div className="text-sm text-gray-500">No scheduled notifications.</div>
-            ) : (
-              <ul className="space-y-3">
-                {scheduledJobs.map((job, i) => (
-                  <li key={i} className="p-3 rounded-lg border border-gray-100 bg-gray-50"> 
-                    <div className="text-sm font-medium text-gray-900">{Array.isArray(job.to) ? job.to.join(', ') : job.to || JSON.stringify(job)}</div>
-                    <div className="text-xs text-gray-500">{job.when || job.at || job.schedule || job.cron || ''}</div>
-                    <pre className="mt-2 text-xs text-gray-600 bg-white p-2 rounded max-h-28 overflow-auto">{JSON.stringify(job, null, 2)}</pre>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <div className="space-y-4">
+              {receivedList.length === 0 ? (
+                <div className="text-sm text-gray-500">No incoming messages.</div>
+              ) : (
+                <div>
+                  <div className="text-sm font-semibold mb-2">Incoming messages ({receivedList.length})</div>
+                  <ul className="space-y-2">
+                    {receivedList.map((m, idx) => (
+                      <li key={idx} className="p-2 rounded border bg-gray-50">
+                        <div className="text-sm font-medium">{m.from || m.sender || m.recipient || 'Unknown'}</div>
+                        <div className="text-xs text-gray-500">{m.text || m.body || m.message || JSON.stringify(m)}</div>
+                        <div className="text-xs text-gray-400">{m.receivedAt || m.timestamp || m.createdAt || ''}</div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div>
+                <div className="text-sm font-semibold mb-2">Scheduled notifications ({scheduledJobs.length})</div>
+                {scheduledJobs.length === 0 ? (
+                  <div className="text-sm text-gray-500">No scheduled notifications.</div>
+                ) : (
+                  <ul className="space-y-3">
+                    {scheduledJobs.map((job, i) => (
+                      <li key={i} className="p-3 rounded-lg border border-gray-100 bg-gray-50">
+                        <div className="text-sm font-medium text-gray-900">{Array.isArray(job.to) ? job.to.join(', ') : job.to || JSON.stringify(job)}</div>
+                        <div className="text-xs text-gray-500">{job.when || job.at || job.schedule || job.cron || ''}</div>
+                        <pre className="mt-2 text-xs text-gray-600 bg-white p-2 rounded max-h-28 overflow-auto">{JSON.stringify(job, null, 2)}</pre>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
