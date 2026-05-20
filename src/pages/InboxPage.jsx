@@ -243,17 +243,25 @@ export default function InboxPage() {
   }, [whatsapp, emails])
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="page-shell px-4 sm:px-8 py-6 space-y-6">
+      <div className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-medical-50 p-6 shadow-card">
+        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-700">Unified inbox</p>
+        <h1 className="mt-2 text-3xl font-extrabold text-surface-900">Inbox</h1>
+        <p className="mt-2 max-w-2xl text-sm text-surface-500">
+          WhatsApp and email replies are displayed in a single branded workspace with clearer tracking.
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 flex-wrap rounded-3xl border border-surface-200 bg-white/85 p-4 shadow-card backdrop-blur-sm">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Inbox notifications</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-semibold text-surface-900">Inbox notifications</h1>
+          <p className="text-sm text-surface-500 mt-1">
             WhatsApp et emails reçus, avec détection automatique des réponses via `sentId`.
           </p>
         </div>
         <button
           onClick={loadInbox}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 bg-white text-sm text-gray-700 hover:bg-gray-50"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-surface-200 bg-white text-sm text-surface-700 hover:bg-surface-50"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh

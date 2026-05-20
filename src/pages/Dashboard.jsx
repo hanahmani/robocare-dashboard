@@ -64,9 +64,9 @@ const STATUS_OPTIONS = [
 ]
 
 const CHANNEL_COLORS = {
-  EMAIL: '#185FA5',
-  WHATSAPP: '#1D9E75',
-  SMS: '#BA7517',
+  EMAIL: '#65a30d',
+  WHATSAPP: '#16a34a',
+  SMS: '#d97706',
 }
 
 const STATUS_BADGE_MAP = {
@@ -274,8 +274,8 @@ export default function Dashboard() {
         {
           label: 'Notifications',
           data: source.map((item) => item.value),
-          borderColor: '#185FA5',
-          backgroundColor: 'rgba(24,95,165,0.08)',
+          borderColor: '#65a30d',
+          backgroundColor: 'rgba(101,163,13,0.08)',
           fill: true,
           pointRadius: 0,
           pointHoverRadius: 0,
@@ -320,13 +320,13 @@ export default function Dashboard() {
         {
           label: 'Success',
           data: buckets.map((entry) => entry.success),
-          backgroundColor: 'rgba(99,153,34,0.7)',
+          backgroundColor: 'rgba(101,163,13,0.72)',
           borderRadius: 6,
         },
         {
           label: 'Failed',
           data: buckets.map((entry) => entry.failed),
-          backgroundColor: 'rgba(226,75,74,0.6)',
+          backgroundColor: 'rgba(239,68,68,0.6)',
           borderRadius: 6,
         },
       ],

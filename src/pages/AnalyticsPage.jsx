@@ -33,16 +33,24 @@ export default function AnalyticsPage() {
   if (loading) return <div className="flex items-center justify-center h-64"><Spin size="large"/></div>
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="page-shell px-4 sm:px-8 py-6 space-y-6">
+      <div className="rounded-3xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-medical-50 p-6 shadow-card">
+        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-brand-700">Analytics center</p>
+        <h1 className="mt-2 text-3xl font-extrabold text-surface-900">Analytics</h1>
+        <p className="mt-2 max-w-2xl text-sm text-surface-500">
+          Explore volume, channel mix, and success trends in a layout that matches the rest of the RoboCare interface.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Volume over time */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div className="bg-white rounded-3xl border border-surface-200 shadow-card p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="font-semibold text-sm text-gray-900">Notification Volume</div>
+            <div className="font-semibold text-sm text-surface-900">Notification Volume</div>
             <div className="flex gap-1">
               {['24h', '7d'].map(r => (
                 <button key={r} onClick={() => setMode(r)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium transition ${mode === r ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'}`}>
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition ${mode === r ? 'bg-brand-600 text-white shadow-glow' : 'text-surface-500 hover:bg-surface-100'}`}>
                   {r}
                 </button>
               ))}
@@ -52,22 +60,22 @@ export default function AnalyticsPage() {
             <AreaChart data={volumeData} margin={{ left: -20 }}>
               <defs>
                 <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#185FA5" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="#185FA5" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#65a30d" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#65a30d" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
               <XAxis dataKey="time" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
-              <Area type="monotone" dataKey="value" name="Volume" stroke="#185FA5" strokeWidth={2} fill="url(#grad)" />
+              <Area type="monotone" dataKey="value" name="Volume" stroke="#65a30d" strokeWidth={2} fill="url(#grad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Channel pie */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="font-semibold text-sm text-gray-900 mb-4">Channel Distribution</div>
+        <div className="bg-white rounded-3xl border border-surface-200 shadow-card p-5">
+          <div className="font-semibold text-sm text-surface-900 mb-4">Channel Distribution</div>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} innerRadius={45} dataKey="value"
@@ -80,24 +88,24 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Success vs Failed */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="font-semibold text-sm text-gray-900 mb-4">Success vs Failed (7 days)</div>
+        <div className="bg-white rounded-3xl border border-surface-200 shadow-card p-5">
+          <div className="font-semibold text-sm text-surface-900 mb-4">Success vs Failed (7 days)</div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={successBarData} margin={{ left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
               <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Success" fill="#639922" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Failed" fill="#E24B4A" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Success" fill="#65a30d" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="Failed" fill="#ef4444" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Smart insights */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="font-semibold text-sm text-gray-900 mb-4">📊 Smart Insights</div>
+        <div className="bg-white rounded-3xl border border-surface-200 shadow-card p-5">
+          <div className="font-semibold text-sm text-surface-900 mb-4">Smart Insights</div>
           <div className="space-y-2">
             {[
               stats.failed > 5 && { type: 'error', msg: `${stats.failed} failures detected — review error logs` },
@@ -107,10 +115,10 @@ export default function AnalyticsPage() {
               { type: 'info', msg: 'Peak sending window: 09:00–12:00 based on historical data' },
             ].filter(Boolean).slice(0, 4).map((ins, i) => {
               const colors = {
-                error: 'bg-red-50 border-red-200 text-red-700',
-                warning: 'bg-amber-50 border-amber-200 text-amber-700',
-                success: 'bg-green-50 border-green-200 text-green-700',
-                info: 'bg-blue-50 border-blue-200 text-blue-700',
+                error: 'bg-alert-50 border-alert-200 text-alert-700',
+                warning: 'bg-warning-50 border-warning-200 text-warning-700',
+                success: 'bg-medical-50 border-medical-200 text-medical-700',
+                info: 'bg-brand-50 border-brand-200 text-brand-700',
               }
               return (
                 <div key={i} className={`px-3 py-2 rounded-xl border text-xs font-medium ${colors[ins.type]}`}>
