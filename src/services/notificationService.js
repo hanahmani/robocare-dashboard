@@ -6,6 +6,8 @@ import {
   sendWhatsApp,
   sendSms,
   normalizeNotification,
+  fetchClients as apiFetchClients,
+  fetchCriticalErrors as apiFetchCriticalErrors,
 } from '../api/notificationApi'
 
 export async function getSentNotifications(type = null) {
@@ -76,4 +78,6 @@ export {
   sendWhatsApp,
   sendSms,
   normalizeNotification,
+  apiFetchClients as fetchClients,
+  apiFetchCriticalErrors as fetchCriticalErrors,
 }

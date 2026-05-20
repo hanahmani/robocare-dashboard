@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import Card from '../components/Card'
-import { recipients as recipientDirectory } from '../data/mockData'
+import { recipients as fallbackRecipients } from '../data/mockData'
+import { templates as clientTemplates } from '../data/templatesConfig'
 import {
   sendEmailNotification,
   sendSmsNotification,
   sendWhatsAppNotification,
+  fetchClients,
 } from '../services/notificationService'
 import {
   buildLandReportPayload,
@@ -17,6 +19,11 @@ import {
 
 const CHANNELS = ['WhatsApp', 'SMS', 'Email']
 const SCHEDULE_STORAGE_KEY = 'robocare.notificationSchedules'
+
+function getDefaultMessage(channel) {
+  const template = clientTemplates.find((item) => item.channel === channel) || clientTemplates[0]
+  return template?.content || 'Please review this notification.'
+}
 
 function parseList(text) {
   return text
@@ -47,14 +54,35 @@ export default function SendWhatsappPage({ embedded = false }) {
   const [channel, setChannel] = useState('WhatsApp')
   const [recipients, setRecipients] = useState('+21646308384')
   const [recipientGroup, setRecipientGroup] = useState('custom')
+  const [selectedClientId, setSelectedClientId] = useState('')
   const [subject, setSubject] = useState('Test')
   const [message, setMessage] = useState('hello Imen , Test RoboCare notification')
+  const [emailUrl, setEmailUrl] = useState('https://robocare.tn')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [sendMode, setSendMode] = useState('now')
   const [scheduleDate, setScheduleDate] = useState('')
   const [scheduleTime, setScheduleTime] = useState('')
   const [scheduledJobs, setScheduledJobs] = useState(() => readScheduledJobs())
+  const [clients, setClients] = useState([])
+  const [clientsLoading, setClientsLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadClients() {
+      try {
+        const data = await fetchClients()
+        setClients(Array.isArray(data) ? data : fallbackRecipients)
+      } catch (err) {
+        console.error('Failed to fetch clients:', err)
+        setClients(fallbackRecipients)
+      } finally {
+        setClientsLoading(false)
+      }
+    }
+
+    loadClients()
+  }, [])
+
   const metaTemplates = getMetaWhatsAppTemplates()
   const [templateName, setTemplateName] = useState(metaTemplates[1]?.name || metaTemplates[0]?.name || '')
   const [templateValues, setTemplateValues] = useState({})
@@ -69,7 +97,7 @@ export default function SendWhatsappPage({ embedded = false }) {
   const [landReportFileUrl, setLandReportFileUrl] = useState('524/Rapport.pdf')
 
   const recipientGroups = useMemo(() => {
-    const directory = Array.isArray(recipientDirectory) ? recipientDirectory : []
+    const directory = Array.isArray(clients) ? clients : []
     const byChannel = directory.reduce(
       (accumulator, item) => {
         const channels = Array.isArray(item.channels) ? item.channels : []
@@ -92,17 +120,21 @@ export default function SendWhatsappPage({ embedded = false }) {
       { id: 'whatsapp', label: 'WhatsApp audience', recipients: Array.from(new Set(byChannel.WhatsApp)) },
       { id: 'sms', label: 'SMS audience', recipients: Array.from(new Set(byChannel.SMS)) },
     ]
-  }, [])
+  }, [clients])
 
   const parsedRecipients = useMemo(() => parseList(recipients), [recipients])
+  const selectedClient = useMemo(
+    () => clients.find((item) => item.id === selectedClientId) || null,
+    [selectedClientId, clients],
+  )
   const selectedTemplate = useMemo(() => findMetaWhatsAppTemplate(templateName), [templateName])
   const templateSchema = useMemo(() => getWhatsAppTemplateParameterSchema(selectedTemplate), [selectedTemplate])
   const languageCode = selectedTemplate?.language || 'en_US'
   const previewBody = useMemo(() => {
-    if (channel === 'Email') return `${subject}\n\n${message}`.trim()
+    if (channel === 'Email') return `${subject}\n\n${message}\n\n${emailUrl}`.trim()
     if (channel === 'SMS') return message
     return selectedTemplate?.name || message
-  }, [channel, subject, message, selectedTemplate?.name])
+  }, [channel, subject, message, emailUrl, selectedTemplate?.name])
 
   const rootClassName = embedded ? 'space-y-6' : 'page-shell px-4 sm:px-8 py-6 space-y-6'
 
@@ -157,6 +189,7 @@ export default function SendWhatsappPage({ embedded = false }) {
       to: targetRecipients,
       subject,
       message,
+      url: emailUrl,
     })
   }
 
@@ -191,6 +224,27 @@ export default function SendWhatsappPage({ embedded = false }) {
     })
     setTemplateValues(nextValues)
   }, [selectedTemplate?.name])
+
+  useEffect(() => {
+    if (!selectedClient) return
+
+    const nextRecipient = channel === 'Email' ? selectedClient.email : selectedClient.phone
+    if (nextRecipient) setRecipients(nextRecipient)
+
+    setRecipientGroup('custom')
+
+    const channelMessage = getDefaultMessage(channel)
+    const personalizedMessage = `Hello ${selectedClient.name}, ${channelMessage}`
+
+    if (channel === 'Email') {
+      setSubject(`Update for ${selectedClient.name}`)
+      setEmailUrl(`https://robocare.tn/clients/${selectedClient.id}`)
+      setMessage(`${personalizedMessage}\n\nOpen your dashboard for the latest delivery details.`)
+      return
+    }
+
+    setMessage(personalizedMessage)
+  }, [channel, selectedClient])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -321,6 +375,24 @@ export default function SendWhatsappPage({ embedded = false }) {
               />
               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Quick client</label>
+                  <select
+                    value={selectedClientId}
+                    onChange={(e) => setSelectedClientId(e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                  >
+                    <option value="">Select a client to auto-fill</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[11px] text-surface-400">
+                    Auto-fills the recipient, subject, message, and URL when a client is selected.
+                  </p>
+                </div>
+                <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Recipient group</label>
                   <select
                     value={recipientGroup}
@@ -357,14 +429,25 @@ export default function SendWhatsappPage({ embedded = false }) {
             </div>
 
             {channel === 'Email' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sujet</label>
-                <input
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-                  placeholder="Sujet de l'email"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl border border-surface-200 bg-surface-50/60 p-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Sujet</label>
+                  <input
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+                    placeholder="Sujet de l'email"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">URL de destination</label>
+                  <input
+                    value={emailUrl}
+                    onChange={(e) => setEmailUrl(e.target.value)}
+                    className="w-full px-3 py-2 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white"
+                    placeholder="https://robocare.tn/clients/U-1001"
+                  />
+                </div>
               </div>
             )}
 
@@ -565,6 +648,11 @@ export default function SendWhatsappPage({ embedded = false }) {
                   <div className="mt-1 whitespace-pre-line text-gray-800">{previewBody || '—'}</div>
                 </div>
               </div>
+              {channel === 'Email' && (
+                <div className="rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600">
+                  <span className="font-semibold text-gray-700">URL:</span> {emailUrl || '—'}
+                </div>
+              )}
               {sendMode === 'schedule' && (
                 <div className="text-xs text-gray-500">
                   Scheduled for: <span className="font-medium text-gray-700">{formatScheduleLabel(scheduleDate && scheduleTime ? new Date(`${scheduleDate}T${scheduleTime}:00`).getTime() : null)}</span>

@@ -73,6 +73,24 @@ export async function fetchHealth() {
   return request(`${BASE}/health`)
 }
 
+export async function fetchClients() {
+  try {
+    return request('/api/clients')
+  } catch (error) {
+    console.warn('Failed to fetch clients from API, returning empty array', error)
+    return []
+  }
+}
+
+export async function fetchCriticalErrors() {
+  try {
+    return request(`${BASE}/errors/critical`)
+  } catch (error) {
+    console.warn('Failed to fetch critical errors, returning empty array', error)
+    return []
+  }
+}
+
 export function normalizeNotification(n) {
   const initials = (n.recipient || '')
     .replace(/[+\d\s-]/g, '')
