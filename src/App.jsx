@@ -9,6 +9,9 @@ import SettingsPage from './pages/SettingsPage'
 import SendPage from './pages/SendPage'
 import SendNotificationPage from './pages/SendWhatsappPage'
 import RecipientsPage from './pages/RecipientsPage'
+import AnalyticsPage from './pages/AnalyticsPage'
+import PerformancePage from './pages/PerformancePage'
+import APITestPage from './pages/APITestPage'
 
 export default function App() {
   return (
@@ -22,6 +25,9 @@ export default function App() {
         <Route path="recipients" element={<RecipientsPage />} />
         <Route path="templates" element={<TemplatesPage />} />
         <Route path="channels" element={<ChannelsPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="performance" element={<PerformancePage />} />
+        <Route path="api-test" element={<APITestPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

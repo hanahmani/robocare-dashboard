@@ -1,26 +1,34 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MoreVertical, Search, Download, Plus, X, ChevronRight, Send, Mail, MessageCircle, Phone } from 'lucide-react'
-import { Avatar, ChannelTag, StatusBadge } from '../components/Badges'
+import {
+  MoreVertical, Search, Download, Plus, X, ChevronRight,
+  Send, Mail, MessageCircle, Phone, RefreshCw, RotateCcw,
+} from 'lucide-react'
+import { StatusBadge } from '../components/Badges'
 import { getSentNotifications, normalizeNotification } from '../services/notificationService'
+import { PageHero, HeroStat, PageKpi, PageWrapper } from '../components/PageHero'
 import SendPage from './SendPage'
 
 const CHANNELS = ['Email', 'WhatsApp', 'SMS']
 const STATUSES = ['Sent', 'Failed', 'Partial', 'Pending']
+const TIME_OPTIONS = [
+  { value: 'all', label: 'All time' },
+  { value: '24h', label: 'Last 24 h' },
+  { value: '7d', label: 'Last 7 days' },
+  { value: '30d', label: 'Last 30 days' },
+]
+const SORT_OPTIONS = [
+  { value: 'recent', label: 'Most recent' },
+  { value: 'oldest', label: 'Oldest first' },
+]
 
 function Modal({ title, onClose, children }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-400">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -33,11 +41,11 @@ function Modal({ title, onClose, children }) {
 function Drawer({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50">
-      <button aria-label="Close drawer" className="absolute inset-0 bg-black/25 backdrop-blur-[1px]" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-full max-w-6xl bg-gray-50 shadow-2xl border-l border-gray-200 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-400">
+      <button className="absolute inset-0 bg-black/25 backdrop-blur-[1px]" onClick={onClose} />
+      <div className="absolute right-0 top-0 h-full w-full max-w-6xl bg-gray-50 dark:bg-gray-950 shadow-2xl border-l border-gray-200 dark:border-gray-800 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -47,89 +55,77 @@ function Drawer({ title, onClose, children }) {
   )
 }
 
-function Field({ label, children }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
-      {children}
-    </div>
-  )
-}
-
 function getMessagePreview(notification) {
   const message = notification.fullMessage || notification.message || notification.bodyText || notification.subject || '—'
-  const compactMessage = String(message).split('\n').join(' ').replace(/\s+/g, ' ').trim()
-  const sentenceMatch = compactMessage.match(/^.*?[.!?](?:\s|$)/)
-  const preview = sentenceMatch
-    ? sentenceMatch[0].trim()
-    : (compactMessage.split(' ').length > 18 ? `${compactMessage.split(' ').slice(0, 18).join(' ')}...` : compactMessage || '—')
-  return {
-    preview: preview || message,
-    remaining: compactMessage !== preview,
-  }
+  const compact = String(message).split('\n').join(' ').replace(/\s+/g, ' ').trim()
+  const match = compact.match(/^.*?[.!?](?:\s|$)/)
+  const preview = match ? match[0].trim() : (compact.split(' ').length > 18 ? `${compact.split(' ').slice(0, 18).join(' ')}...` : compact || '—')
+  return { preview: preview || message, hasMore: compact !== preview }
 }
 
-function NotificationMessagePreview({ notification, onOpenDetails }) {
+function MessagePreview({ notification }) {
   const [expanded, setExpanded] = useState(false)
-  const { preview, remaining } = getMessagePreview(notification)
-  const fullMessage = notification.fullMessage || notification.message || notification.bodyText || notification.subject || '—'
-
+  const { preview, hasMore } = getMessagePreview(notification)
+  const full = notification.fullMessage || notification.message || notification.bodyText || notification.subject || '—'
   return (
     <div className="space-y-1">
-      <div className="text-sm text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
-        {preview}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-        {notification.templateName && <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700">{notification.templateName}</span>}
-        {notification.templateLang && <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700">{notification.templateLang}</span>}
-      </div>
-      {remaining && (
+      <div className="text-sm text-gray-900 dark:text-gray-100 truncate max-w-xs">{preview}</div>
+      {notification.templateName && (
+        <span className="inline-block px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[10px]">
+          {notification.templateName}
+        </span>
+      )}
+      {hasMore && (
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline transition-colors"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 dark:text-green-400 hover:underline"
         >
           {expanded ? 'Voir moins' : 'Voir plus'}
           <ChevronRight className="w-3 h-3" />
         </button>
       )}
       {expanded && (
-        <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="text-xs text-gray-700 whitespace-pre-line break-words leading-relaxed">
-            {fullMessage}
-          </div>
+        <div className="mt-2 p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-line break-words leading-relaxed">{full}</div>
         </div>
       )}
     </div>
   )
 }
 
-function SendDrawer({ onClose, onOpenFullPage }) {
-  return (
-    <Drawer title="New Notification" onClose={onClose}>
-      <div className="overflow-auto h-full">
-        <SendPage />
-      </div>
-    </Drawer>
-  )
+const inputCls = 'w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/25 focus:border-green-500 transition-all'
+const selectCls = 'w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/25 focus:border-green-500 transition-all'
+
+function ChannelCell({ channel }) {
+  if (channel === 'WhatsApp') return <div className="inline-flex items-center gap-1.5"><MessageCircle className="w-4 h-4 text-green-500" /><span className="text-sm font-medium text-green-700 dark:text-green-400">WhatsApp</span></div>
+  if (channel === 'Email') return <div className="inline-flex items-center gap-1.5"><Mail className="w-4 h-4 text-blue-500" /><span className="text-sm font-medium text-blue-700 dark:text-blue-400">Email</span></div>
+  return <div className="inline-flex items-center gap-1.5"><Phone className="w-4 h-4 text-orange-500" /><span className="text-sm font-medium text-orange-700 dark:text-orange-400">SMS</span></div>
 }
 
-const inputCls =
-  'w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500'
-
-const selectCls =
-  'w-full px-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white'
+function AvatarCircle({ name, channel }) {
+  const bg = channel === 'WhatsApp' ? 'bg-green-500' : channel === 'Email' ? 'bg-purple-500' : 'bg-blue-500'
+  return (
+    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${bg}`}>
+      {(name || '?').charAt(0).toUpperCase()}
+    </div>
+  )
+}
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [recipientFilter, setRecipientFilter] = useState('')
   const [channelFilter, setChannelFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [timeFilter, setTimeFilter] = useState('all')
   const [sortOrder, setSortOrder] = useState('recent')
+  const [liveRefresh, setLiveRefresh] = useState(true)
   const [actionMenu, setActionMenu] = useState(null)
-  const [selectedNotification, setSelectedNotification] = useState(null)
+  const [selectedNotif, setSelectedNotif] = useState(null)
   const [showSendDrawer, setShowSendDrawer] = useState(false)
   const rowRefs = useRef(new Map())
   const focusId = searchParams.get('focus') || ''
@@ -137,248 +133,246 @@ export default function NotificationsPage() {
   useEffect(() => {
     let cancelled = false
     async function load() {
+      setLoading(true)
       try {
         const res = await getSentNotifications()
         const list = Array.isArray(res) ? res.map((r) => normalizeNotification(r)) : []
-        if (!cancelled) setData(list || [])
+        if (!cancelled) setData(list)
       } catch (err) {
         console.error('Failed to load sent notifications', err)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
     }
     load()
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    if (!liveRefresh) return
+    const id = setInterval(async () => {
+      try {
+        const res = await getSentNotifications()
+        const list = Array.isArray(res) ? res.map((r) => normalizeNotification(r)) : []
+        setData(list)
+      } catch {}
+    }, 30_000)
+    return () => clearInterval(id)
+  }, [liveRefresh])
+
+  const timeMs = { '24h': 86400000, '7d': 604800000, '30d': 2592000000 }
+
   const filtered = useMemo(() => {
-    const list = data.filter((n) => {
-      if (channelFilter !== 'All' && String(n.channel).toLowerCase() !== channelFilter.toLowerCase()) return false
-      if (statusFilter !== 'All' && String(n.status).toLowerCase() !== statusFilter.toLowerCase()) return false
-      if (search) {
+    const now = Date.now()
+    const limit = timeMs[timeFilter] ? now - timeMs[timeFilter] : null
+    return data
+      .filter((n) => {
+        if (channelFilter !== 'All' && String(n.channel).toLowerCase() !== channelFilter.toLowerCase()) return false
+        if (statusFilter !== 'All' && String(n.status).toLowerCase() !== statusFilter.toLowerCase()) return false
+        if (limit) {
+          const ts = new Date(n.raw?.sentAt || n.raw?.createdAt || 0).getTime()
+          if (ts < limit) return false
+        }
         const q = search.toLowerCase()
-        if (!String(n.recipient || '').toLowerCase().includes(q) && !String(n.id || '').toLowerCase().includes(q)) return false
-      }
-      return true
-    })
-    return list.sort((a, b) => {
-      const left = new Date(a.raw?.sentAt || a.raw?.createdAt || 0).getTime()
-      const right = new Date(b.raw?.sentAt || b.raw?.createdAt || 0).getTime()
-      return sortOrder === 'recent' ? right - left : left - right
-    })
-  }, [data, search, channelFilter, statusFilter, sortOrder])
+        if (q && !String(n.recipient || '').toLowerCase().includes(q) && !String(n.id || '').toLowerCase().includes(q)) return false
+        if (recipientFilter && !String(n.recipient || '').toLowerCase().includes(recipientFilter.toLowerCase())) return false
+        return true
+      })
+      .sort((a, b) => {
+        const l = new Date(a.raw?.sentAt || a.raw?.createdAt || 0).getTime()
+        const r = new Date(b.raw?.sentAt || b.raw?.createdAt || 0).getTime()
+        return sortOrder === 'recent' ? r - l : l - r
+      })
+  }, [data, search, recipientFilter, channelFilter, statusFilter, timeFilter, sortOrder])
 
   useEffect(() => {
     if (!focusId) return
     const el = rowRefs.current.get(String(focusId))
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [focusId, filtered.length])
 
-  function handleDelete(id) {
-    setData((prev) => prev.filter((n) => n.id !== id))
-    setActionMenu(null)
-  }
-
-  function openDetails(notification) {
-    setSelectedNotification(notification)
-  }
+  function handleDelete(id) { setData((prev) => prev.filter((n) => n.id !== id)); setActionMenu(null) }
 
   function handleExport() {
     const rows = [
       ['ID', 'Recipient', 'Channel', 'Status', 'Message', 'Timestamp'],
       ...filtered.map((n) => [n.id, n.recipient, n.channel, n.status, n.fullMessage || n.message || n.bodyText || n.subject || '', n.timestamp]),
     ]
-    const csv = rows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'notifications.csv'
-    a.click()
-    URL.revokeObjectURL(url)
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: 'notifications.csv' })
+    a.click(); URL.revokeObjectURL(a.href)
   }
 
+  const kpi = useMemo(() => {
+    const total = data.length
+    const failed = data.filter((n) => String(n.status).toLowerCase() === 'failed').length
+    const rate = total > 0 ? ((failed / total) * 100).toFixed(1) : '0.0'
+    return { visible: filtered.length, failed, rate, total }
+  }, [data, filtered])
+
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-6">
-      {/* Page Header */}
-      <div className="flex items-start justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications envoyées</h1>
-          <p className="text-sm text-gray-500 mt-1">Gérez et consultez toutes vos notifications envoyées.</p>
+    <PageWrapper>
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <PageHero
+        label="Notification Center"
+        title="Notifications"
+        subtitle="Search, review, retry, and export your notification history from a cleaner workspace."
+        right={
+          <div className="flex items-center gap-2">
+            <HeroStat label="Visible" value={kpi.visible} />
+            <HeroStat label="Failures" value={kpi.failed} danger={kpi.failed > 0} />
+          </div>
+        }
+      />
+
+      {/* ── Filters & actions ────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm space-y-3">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search notifications... try: failed whatsapp"
+            className={`pl-9 pr-8 ${inputCls}`} />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
-        <button
-          onClick={() => setShowSendDrawer(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          New Notification
-        </button>
+
+        {/* Filter recipient */}
+        <input type="text" value={recipientFilter} onChange={(e) => setRecipientFilter(e.target.value)}
+          placeholder="Filter recipient" className={inputCls} />
+
+        {/* Dropdowns */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <select value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)} className={selectCls}>
+            <option value="All">All Channels</option>
+            {CHANNELS.map((c) => <option key={c}>{c}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selectCls}>
+            <option value="All">All Statuses</option>
+            {STATUSES.map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className={selectCls}>
+            {TIME_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className={selectCls}>
+            {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <button
+            onClick={() => setLiveRefresh((v) => !v)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+              liveRefresh
+                ? 'bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-400 border-green-300 dark:border-green-800'
+                : 'bg-gray-50 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700'
+            }`}
+          >
+            {liveRefresh ? '● Live on' : '○ Live off'}
+          </button>
+
+          <button
+            onClick={async () => { setLoading(true); try { const r = await getSentNotifications(); setData(Array.isArray(r) ? r.map(normalizeNotification) : []) } catch {} finally { setLoading(false) } }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+
+          <button
+            onClick={handleExport}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export
+          </button>
+
+          <button
+            onClick={() => alert('Retrying all failed notifications...')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-950/50 transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Retry all failed
+          </button>
+
+          <button
+            onClick={() => setShowSendDrawer(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg bg-green-700 hover:bg-green-800 text-white transition-colors ml-auto"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New Notification
+          </button>
+        </div>
       </div>
 
-      {/* Filters Row */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-gray-200">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher destinataire, ID..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+      {/* ── KPI cards ────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <PageKpi title="Visible Rows" value={kpi.visible} desc="Currently filtered" />
+        <PageKpi title="Failed" value={kpi.failed} desc="Total errors" accent={kpi.failed > 0 ? '#dc2626' : undefined} />
+        <PageKpi title="Failure Rate" value={`${kpi.rate}%`} desc="Of all notifications" accent={Number(kpi.rate) > 5 ? '#dc2626' : '#2d7a1f'} />
+        <PageKpi title="Live Updates" value={liveRefresh ? 'On' : 'Off'} desc="Auto-refresh 30s" accent={liveRefresh ? '#2d7a1f' : '#6b7280'} />
+      </div>
 
-          <div className="flex items-center gap-2">
-            <select
-              value={channelFilter}
-              onChange={(e) => setChannelFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 cursor-pointer focus:outline-none hover:border-gray-300 transition-colors"
-            >
-              <option value="All">Tous les canaux</option>
-              {CHANNELS.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 cursor-pointer focus:outline-none hover:border-gray-300 transition-colors"
-            >
-              <option value="All">Tous les statuts</option>
-              {STATUSES.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 cursor-pointer focus:outline-none hover:border-gray-300 transition-colors"
-            >
-              <option value="recent">Plus récent</option>
-              <option value="oldest">Plus ancien</option>
-            </select>
-
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
-          </div>
-        </div>
-
-        {/* Table */}
+      {/* ── Table ────────────────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-gray-200">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Destinataire</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Canal</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Message</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Date d'envoi</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider w-12"></th>
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                {['Recipient', 'Channel', 'Status', 'Message', 'Timestamp', ''].map((h) => (
+                  <th key={h} className="text-left px-5 py-3 text-[10.5px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center">
-                    <Send className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">Aucune notification trouvée</p>
-                    <p className="text-gray-400 text-sm mt-1">Essayez de modifier vos filtres</p>
+                  <td colSpan={6} className="px-5 py-14 text-center">
+                    <Send className="w-10 h-10 text-gray-200 dark:text-gray-700 mx-auto mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400 font-medium">No notifications found</p>
+                    <p className="text-gray-400 dark:text-gray-600 text-sm mt-1">Try adjusting your filters</p>
                   </td>
                 </tr>
               ) : (
                 filtered.map((n) => (
                   <tr
                     key={n.id}
-                    ref={(node) => {
-                      if (node) rowRefs.current.set(String(n.id), node)
-                      else rowRefs.current.delete(String(n.id))
-                    }}
-                    className={`bg-white hover:bg-slate-50 transition-colors ${String(n.id) === focusId ? 'bg-blue-50/50 ring-1 ring-inset ring-blue-200' : ''}`}
+                    ref={(node) => { if (node) rowRefs.current.set(String(n.id), node); else rowRefs.current.delete(String(n.id)) }}
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${String(n.id) === focusId ? 'bg-green-50/50 dark:bg-green-950/20' : ''}`}
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ${
-                            n.channel === 'WhatsApp'
-                              ? 'bg-green-500'
-                              : n.channel === 'Email'
-                                ? 'bg-purple-500'
-                                : 'bg-blue-500'
-                          }`}
-                        >
-                          {n.initials || n.recipient?.charAt(0).toUpperCase()}
-                        </div>
+                        <AvatarCircle name={n.recipient} channel={n.channel} />
                         <div>
-                          <div className="text-sm font-semibold text-gray-900">{n.recipient}</div>
-                          <div className="text-xs text-gray-400 font-mono">#{n.id}</div>
+                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">{n.recipient}</div>
+                          <div className="text-xs text-gray-400 font-mono">ID {n.id}</div>
                         </div>
                       </div>
                     </td>
-
-                    <td className="px-5 py-4">
-                      {n.channel === 'WhatsApp' ? (
-                        <div className="inline-flex items-center gap-1.5">
-                          <MessageCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm font-medium text-green-700">WhatsApp</span>
-                        </div>
-                      ) : n.channel === 'Email' ? (
-                        <div className="inline-flex items-center gap-1.5">
-                          <Mail className="w-4 h-4 text-purple-500" />
-                          <span className="text-sm font-medium text-purple-700">Email</span>
-                        </div>
-                      ) : (
-                        <div className="inline-flex items-center gap-1.5">
-                          <Phone className="w-4 h-4 text-blue-500" />
-                          <span className="text-sm font-medium text-blue-700">SMS</span>
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <StatusBadge status={n.status} />
-                    </td>
-
-                    <td className="px-5 py-4 max-w-2xl">
-                      <NotificationMessagePreview notification={n} onOpenDetails={() => openDetails(n)} />
-                      {n.errorMessage && String(n.status).toLowerCase() !== 'failed' && (
-                        <div className="mt-2 text-xs text-gray-600">
-                          <span className="font-medium">Info:</span> {n.errorMessage}
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-gray-600 whitespace-nowrap">{n.timestamp}</td>
-
+                    <td className="px-5 py-4"><ChannelCell channel={n.channel} /></td>
+                    <td className="px-5 py-4"><StatusBadge status={n.status} /></td>
+                    <td className="px-5 py-4 max-w-xs"><MessagePreview notification={n} /></td>
+                    <td className="px-5 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{n.timestamp}</td>
                     <td className="px-5 py-4 relative">
-                      <button
-                        onClick={() => setActionMenu(actionMenu === n.id ? null : n.id)}
-                        className="p-1 rounded hover:bg-gray-100 text-gray-400 transition-colors"
-                      >
+                      <button onClick={() => setActionMenu(actionMenu === n.id ? null : n.id)}
+                        className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors">
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       {actionMenu === n.id && (
-                        <div className="absolute right-4 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[140px] py-1">
-                          <button
-                            onClick={() => handleDelete(n.id)}
-                            className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            Supprimer
+                        <div className="absolute right-4 top-10 z-20 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg min-w-[140px] py-1">
+                          <button onClick={() => { setSelectedNotif(n); setActionMenu(null) }}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            View details
+                          </button>
+                          <button onClick={() => handleDelete(n.id)}
+                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                            Delete
                           </button>
                         </div>
                       )}
@@ -389,54 +383,36 @@ export default function NotificationsPage() {
             </tbody>
           </table>
         </div>
-
         {filtered.length > 0 && (
-          <div className="px-5 py-3 border-t border-gray-200 text-xs text-gray-500">
-            {filtered.length} notification{filtered.length !== 1 ? 's' : ''} affichée{filtered.length !== 1 ? 's' : ''}
+          <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-500">
+            {filtered.length} notification{filtered.length !== 1 ? 's' : ''} shown
           </div>
         )}
       </div>
 
+      {/* ── Drawers / Modals ──────────────────────────────────── */}
       {showSendDrawer && (
-        <SendDrawer
-          onClose={() => setShowSendDrawer(false)}
-          onOpenFullPage={() => navigate('/send')}
-        />
+        <Drawer title="New Notification" onClose={() => setShowSendDrawer(false)}>
+          <div className="overflow-auto h-full"><SendPage /></div>
+        </Drawer>
       )}
 
-      {selectedNotification && (
-        <Modal title={`Notification #${selectedNotification.id}`} onClose={() => setSelectedNotification(null)}>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div><span className="font-medium text-gray-700">Destinataire:</span> {selectedNotification.recipient}</div>
-              <div><span className="font-medium text-gray-700">Canal:</span> {selectedNotification.channel}</div>
-              <div><span className="font-medium text-gray-700">Statut:</span> {selectedNotification.status}</div>
-              <div><span className="font-medium text-gray-700">Date:</span> {selectedNotification.timestamp}</div>
-              {selectedNotification.templateName && <div><span className="font-medium text-gray-700">Template:</span> {selectedNotification.templateName}</div>}
-              {selectedNotification.templateLang && <div><span className="font-medium text-gray-700">Langue:</span> {selectedNotification.templateLang}</div>}
-            </div>
-
-            <div>
-              <div className="text-xs font-medium text-gray-700 mb-2">Message complet</div>
-              <pre className="whitespace-pre-wrap break-words rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800 leading-6 max-h-80 overflow-auto">
-{selectedNotification.fullMessage || selectedNotification.message || selectedNotification.bodyText || selectedNotification.subject || '—'}
-              </pre>
-            </div>
-
-            {selectedNotification.fileUrl && (
-              <div className="text-sm">
-                <span className="font-medium text-gray-700">Fichier:</span> {selectedNotification.fileUrl}
-              </div>
-            )}
-
-            {selectedNotification.errorMessage && String(selectedNotification.status).toLowerCase() !== 'failed' && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 whitespace-pre-wrap">
-                <span className="font-medium">Erreur:</span> {selectedNotification.errorMessage}
-              </div>
-            )}
+      {selectedNotif && (
+        <Modal title={`Notification #${selectedNotif.id}`} onClose={() => setSelectedNotif(null)}>
+          <div className="grid grid-cols-2 gap-3 text-sm text-gray-700 dark:text-gray-300">
+            <div><span className="font-semibold">Recipient:</span> {selectedNotif.recipient}</div>
+            <div><span className="font-semibold">Channel:</span> {selectedNotif.channel}</div>
+            <div><span className="font-semibold">Status:</span> {selectedNotif.status}</div>
+            <div><span className="font-semibold">Date:</span> {selectedNotif.timestamp}</div>
+          </div>
+          <div>
+            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Full message</div>
+            <pre className="whitespace-pre-wrap break-words rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 text-sm text-gray-800 dark:text-gray-200 leading-relaxed max-h-80 overflow-auto">
+              {selectedNotif.fullMessage || selectedNotif.message || selectedNotif.bodyText || selectedNotif.subject || '—'}
+            </pre>
           </div>
         </Modal>
       )}
-    </div>
+    </PageWrapper>
   )
 }
