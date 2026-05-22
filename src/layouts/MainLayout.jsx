@@ -1,59 +1,50 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard,
-  Bell,
-  Users,
-  FileText,
-  Share2,
-  Settings,
-  RefreshCw,
-  User,
-  Send,
-  Inbox,
-  Menu,
-  Sun,
-  Moon,
-  BarChart2,
-  Activity,
-  Terminal,
-  Sparkles,
+  LayoutDashboard, Bell, Users, FileText, Share2, Settings,
+  RefreshCw, Send, Inbox, Menu, Sun, Moon, BarChart2, Activity,
+  Terminal, Sparkles, History, UserCog, LogOut,
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import RoboCareLogo from '../components/RoboCareLogo'
 
-const navItems = [
+const BASE_NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/history', label: 'Historique', icon: History },
   { to: '/notifications', label: 'Notifications', icon: Bell },
-  { to: '/send', label: 'Send', icon: Send },
+  { to: '/send', label: 'Envoyer', icon: Send },
   { to: '/inbox', label: 'Inbox', icon: Inbox },
   { to: '/recipients', label: 'Clients', icon: Users },
   { to: '/templates', label: 'Templates', icon: FileText },
-  { to: '/channels', label: 'Channels', icon: Share2 },
+  { to: '/channels', label: 'Canaux', icon: Share2 },
   { to: '/analytics', label: 'Analytics', icon: BarChart2 },
   { to: '/performance', label: 'Performance', icon: Activity },
   { to: '/api-test', label: 'API Test', icon: Terminal },
-  { to: '/settings', label: 'Settings', icon: Settings },
-]
-
-const LOGO_PALETTE = [
-  { color: '#2d7a1f', label: 'Green' },
-  { color: '#5db85c', label: 'Leaf' },
-  { color: '#c41e3a', label: 'Red' },
-  { color: '#1a1a1a', label: 'Charcoal' },
+  { to: '/settings', label: 'Paramètres', icon: Settings },
+  { to: '/users', label: 'Comptes', icon: UserCog, adminOnly: true },
 ]
 
 export default function MainLayout() {
   const location = useLocation()
   const { dark, toggle } = useTheme()
+  const { user, logout } = useAuth()
+
+  const navItems = BASE_NAV.filter((n) => !n.adminOnly || user?.role === 'ADMIN')
 
   const current = navItems.find(
     (n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)),
   )
   const pageTitle = current?.label || 'Dashboard'
 
-  const today = new Date().toLocaleDateString('en-US', {
+  const today = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   })
+
+  const initials = user
+    ? `${(user.prenom || '')[0] || ''}${(user.nom || '')[0] || ''}`.toUpperCase() || 'U'
+    : 'U'
+  const displayName = user ? `${user.prenom ?? ''} ${user.nom ?? ''}`.trim() || user.login : 'Utilisateur'
+  const displayRole = user?.role || 'USER'
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
@@ -67,7 +58,7 @@ export default function MainLayout() {
         {/* Navigation */}
         <nav className="flex-1 py-4 px-3 overflow-y-auto">
           <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 px-3 mb-3">
-            Main Menu
+            Menu
           </div>
           <ul className="flex flex-col gap-0.5">
             {navItems.map(({ to, label, icon: Icon, end }) => (
@@ -87,10 +78,9 @@ export default function MainLayout() {
                     <Icon className="w-[15px] h-[15px]" strokeWidth={1.75} />
                     {label}
                   </span>
-                  {/* Arrow on active */}
                   {location.pathname === to && (
                     <svg className="w-3 h-3 text-green-600 dark:text-green-400" viewBox="0 0 6 10" fill="none">
-                      <path d="M1 1l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M1 1l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                 </NavLink>
@@ -117,38 +107,28 @@ export default function MainLayout() {
           </div>
         </div>
 
-        {/* Logo palette */}
-        <div className="px-3 pb-3">
-          <div className="rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3">
-            <div className="text-[9px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-2">
-              Logo Palette
-            </div>
-            <div className="flex items-center gap-2">
-              {LOGO_PALETTE.map(({ color, label }) => (
-                <div key={color} className="flex flex-col items-center gap-1">
-                  <div className="w-5 h-5 rounded-full border border-white/20" style={{ background: color }} title={label} />
-                  <span className="text-[8px] text-gray-400 dark:text-gray-600">{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* User */}
-        <div className="px-3 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3">
+        {/* User info + logout */}
+        <div className="px-3 pb-4 border-t border-gray-200 dark:border-gray-800 pt-3 space-y-2">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800">
             <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              AD
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-                Admin User
+              <div className="text-[12px] font-semibold text-gray-900 dark:text-gray-100 leading-tight truncate">
+                {displayName}
               </div>
               <div className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
-                Super Admin
+                {displayRole}
               </div>
             </div>
           </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-3 py-2 text-[13px] text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors w-full font-medium"
+          >
+            <LogOut className="w-[15px] h-[15px]" strokeWidth={1.75} />
+            Déconnexion
+          </button>
         </div>
       </aside>
 
@@ -164,57 +144,48 @@ export default function MainLayout() {
               <h1 className="font-bold text-gray-900 dark:text-gray-100 text-[16px] leading-tight">
                 {pageTitle}
               </h1>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5">
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight mt-0.5 capitalize">
                 {today}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Bell */}
             <button
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors relative"
               aria-label="Notifications"
             >
               <Bell className="w-[18px] h-[18px]" strokeWidth={1.75} />
             </button>
-
-            {/* Refresh */}
             <button
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
               aria-label="Refresh"
             >
               <RefreshCw className="w-[18px] h-[18px]" strokeWidth={1.75} />
             </button>
-
-            {/* Dark mode toggle */}
             <button
               onClick={toggle}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
               aria-label="Toggle dark mode"
-              title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={dark ? 'Mode clair' : 'Mode sombre'}
             >
-              {dark ? (
-                <Sun className="w-[18px] h-[18px]" strokeWidth={1.75} />
-              ) : (
-                <Moon className="w-[18px] h-[18px]" strokeWidth={1.75} />
-              )}
+              {dark
+                ? <Sun className="w-[18px] h-[18px]" strokeWidth={1.75} />
+                : <Moon className="w-[18px] h-[18px]" strokeWidth={1.75} />}
             </button>
 
-            {/* Divider */}
             <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1" />
 
-            {/* User */}
             <div className="flex items-center gap-2.5 ml-1">
               <div className="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-bold">
-                AD
+                {initials}
               </div>
               <div className="hidden sm:block">
                 <div className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 leading-tight">
-                  Admin User
+                  {displayName}
                 </div>
                 <div className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-                  Super Admin
+                  {displayRole}
                 </div>
               </div>
             </div>

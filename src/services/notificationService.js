@@ -6,7 +6,8 @@ import {
   sendWhatsApp,
   sendSms,
   normalizeNotification,
-} from '../api/notificationApi'
+  computeStats,
+} from '../api/Notificationapi'
 
 export async function getSentNotifications(type = null) {
   return fetchSentNotifications(type)
@@ -14,20 +15,8 @@ export async function getSentNotifications(type = null) {
 
 export async function getDashboardStats() {
   const notifications = await fetchSentNotifications()
-  // computeStats is exported from the lower-level API helper
-  if (typeof computeStats === 'function') {
-    return computeStats(Array.isArray(notifications) ? notifications : [])
-  }
-  // fallback
-  return {
-    total: Array.isArray(notifications) ? notifications.length : 0,
-    sent: Array.isArray(notifications) ? notifications.filter(n => n.status === 'SENT').length : 0,
-    failed: Array.isArray(notifications) ? notifications.filter(n => n.status === 'FAILED').length : 0,
-    partial: Array.isArray(notifications) ? notifications.filter(n => n.status === 'PARTIAL').length : 0,
-    successRate: Array.isArray(notifications) && notifications.length > 0 ? (((notifications.filter(n => n.status === 'SENT').length) / notifications.length) * 100).toFixed(1) : '0.0',
-    byType: {},
-    failedWithErrors: [],
-  }
+  const list = Array.isArray(notifications) ? notifications : []
+  return computeStats(list)
 }
 
 export async function getReceivedNotifications() {
@@ -76,4 +65,5 @@ export {
   sendWhatsApp,
   sendSms,
   normalizeNotification,
+  computeStats,
 }

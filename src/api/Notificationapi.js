@@ -1,29 +1,46 @@
 /**
  * api/notificationApi.js
  * Fonctions d'appel vers le microservice Spring Boot (port 8081 via proxy Vite).
+ *
+ * IMPORTANT : on utilise le client axios partagé (apiClient) afin que le token
+ * JWT soit toujours injecté automatiquement (via setAuthToken dans AuthContext)
+ * et que les erreurs 401/403 déclenchent la déconnexion globale. Cela évite le
+ * problème "HTTP 403: Forbidden" quand le token n'était pas joint à la requête.
  */
 
+import apiClient from './apiClient'
 import { findMetaWhatsAppTemplate } from '../data/whatsappTemplates'
 
 const BASE = '/api/notifications'
 
+// Petit wrapper pour conserver la même forme de retour que l'ancien `request`
 async function request(url, options = {}) {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
+  const method = (options.method || 'GET').toLowerCase()
+  const body = options.body ? JSON.parse(options.body) : undefined
+  const res = await apiClient.request({
+    url,
+    method,
+    data: body,
+    headers: options.headers,
   })
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`)
-  }
-
-  if (res.status === 204) return null
-  return res.json()
+  return res.data
 }
 
 export async function fetchSentNotifications(type = null) {
-  const url = type ? `${BASE}/history/sent?type=${encodeURIComponent(type)}` : `${BASE}/history/sent`
+  const url = type
+    ? `${BASE}/history/sent?type=${encodeURIComponent(type)}`
+    : `${BASE}/history/sent`
+  return request(url)
+}
+
+/**
+ * Version enrichie : inclut "sentByUser" (qui a envoyé) et "whatsappStatus".
+ * À utiliser pour le tableau d'historique détaillé du dashboard.
+ */
+export async function fetchSentNotificationsDetailed(type = null) {
+  const url = type
+    ? `${BASE}/history/sent-detailed?type=${encodeURIComponent(type)}`
+    : `${BASE}/history/sent-detailed`
   return request(url)
 }
 
